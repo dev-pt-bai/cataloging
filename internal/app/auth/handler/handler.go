@@ -26,17 +26,18 @@ func New(service Service) *Handler {
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
-	userID, password, ok := r.BasicAuth()
-	if !ok {
-		slog.ErrorContext(r.Context(), errors.MissingBasicAuth.String(), slog.String("requestID", requestID))
-		w.WriteHeader(http.StatusUnauthorized)
+	req := model.LoginRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
-			"errorCode": errors.MissingBasicAuth.String(),
+			"errorCode": errors.JSONDecodeFailure.String(),
 		})
 		return
 	}
+	defer r.Body.Close()
 
-	auth, err := h.service.Login(r.Context(), model.User{ID: userID, Password: password})
+	auth, err := h.service.Login(r.Context(), model.User{ID: req.ID, Password: req.Password})
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
