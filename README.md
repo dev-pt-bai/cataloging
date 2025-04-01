@@ -38,13 +38,13 @@ go mod tidy
 
 3. Set up the environment variables
 
-Copy the `config.json.example` file in `config` directory to `config.json` and configure the values:
+Copy the `config.json.example` file in `configs` directory to `config.json` and configure the values:
 
 ```bash
-cp config/config.json.example config/config.json
+cp configs/config.json.example configs/config.json
 ```
 
-Edit `configs.json` to include, e.g., your database connection details
+Edit `config.json` to include, e.g., your database connection details
 
 ```json
 {
