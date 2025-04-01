@@ -1,0 +1,17 @@
+{
+    "app": {
+        "port": 8002,
+        "tokenExpiryHour": -1
+    },
+    "secret": {
+        "jwt": "jaladri2401"
+    },
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "user": "gotama",
+        "password": "jaladri2401",
+        "name": "bai",
+        "SSLMode": "disable"
+    }
+}

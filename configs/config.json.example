@@ -1,0 +1,17 @@
+{
+    "app: {
+        "port": 8080,
+        "tokenExpiryHour": 0
+    }
+    "secret: {
+        "jwt": "yourJWTSecret"
+    }
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "user": "youruser",
+        "password": "yourpassword",
+        "name": "yourdbname",
+        "SSLMode": "disable"
+    }
+}
