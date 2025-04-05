@@ -44,6 +44,7 @@ func JSONFormatter(next http.Handler, _ *configs.Config) http.Handler {
 }
 
 var whitelistAuth map[string]struct{} = map[string]struct{}{
+	"GET /ping":     {},
 	"POST /users":   {},
 	"POST /login":   {},
 	"POST /refresh": {},

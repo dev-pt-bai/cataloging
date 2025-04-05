@@ -14,7 +14,11 @@ import (
 	"github.com/dev-pt-bai/cataloging/configs"
 	ahandler "github.com/dev-pt-bai/cataloging/internal/app/auth/handler"
 	aservice "github.com/dev-pt-bai/cataloging/internal/app/auth/service"
+	mhandler "github.com/dev-pt-bai/cataloging/internal/app/materials/handler"
+	mrepository "github.com/dev-pt-bai/cataloging/internal/app/materials/repository"
+	mservice "github.com/dev-pt-bai/cataloging/internal/app/materials/service"
 	"github.com/dev-pt-bai/cataloging/internal/app/middleware"
+	phandler "github.com/dev-pt-bai/cataloging/internal/app/ping/handler"
 	uhandler "github.com/dev-pt-bai/cataloging/internal/app/users/handler"
 	urepository "github.com/dev-pt-bai/cataloging/internal/app/users/repository"
 	uservice "github.com/dev-pt-bai/cataloging/internal/app/users/service"
@@ -65,6 +69,8 @@ func (a *App) Start() error {
 		return fmt.Errorf("failed to create database client: %w", err)
 	}
 
+	pingHandler := phandler.New()
+
 	userRepository := urepository.New(db)
 	userService := uservice.New(userRepository)
 	userHandler := uhandler.New(userService)
@@ -72,7 +78,12 @@ func (a *App) Start() error {
 	authService := aservice.New(userRepository, config)
 	authHandler := ahandler.New(authService, config)
 
+	materialRepository := mrepository.New(db)
+	materialService := mservice.New(materialRepository)
+	materialHandler := mhandler.New(materialService)
+
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ping", pingHandler.Ping)
 	mux.HandleFunc("POST /login", authHandler.Login)
 	mux.HandleFunc("POST /refresh", authHandler.RefreshToken)
 	mux.HandleFunc("POST /users", userHandler.CreateUser)
@@ -80,6 +91,11 @@ func (a *App) Start() error {
 	mux.HandleFunc("GET /users/{id}", userHandler.GetUserByID)
 	mux.HandleFunc("PUT /users/{id}", userHandler.UpdateUser)
 	mux.HandleFunc("DELETE /users/{id}", userHandler.DeleteUserByID)
+	mux.HandleFunc("POST /material_types", materialHandler.CreateMaterialType)
+	mux.HandleFunc("GET /material_types", materialHandler.ListMaterialTypes)
+	mux.HandleFunc("GET /material_types/{code}", materialHandler.GetMaterialTypeByCode)
+	mux.HandleFunc("PUT /material_types/{code}", materialHandler.UpdateMaterialType)
+	mux.HandleFunc("DELETE /material_types/{code}", materialHandler.DeleteMaterialTypeByCode)
 
 	var newHandler http.Handler
 	middlewares := []middleware.MiddlewareFunc{
