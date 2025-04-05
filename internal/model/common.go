@@ -26,6 +26,7 @@ func IsAvailableToSortUser(fieldName string) bool {
 var materialTypesFieldToSort map[string]struct{} = map[string]struct{}{
 	"code":        {},
 	"description": {},
+	"val_class":   {},
 }
 
 func IsAvailableToSortMaterialType(fieldName string) bool {

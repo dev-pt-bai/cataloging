@@ -299,7 +299,7 @@ func (h *Handler) buildListMaterialTypesCriteria(q url.Values) (model.ListMateri
 
 	c.FilterMaterialType.Description = q.Get("description")
 
-	h.sort(q, &c.Sort, &messages)
+	h.sort(q, &c.Sort, &messages, model.IsAvailableToSortMaterialType)
 	h.paginate(q, &c.Page, &messages)
 
 	return c, strings.Join(messages, ", ")
@@ -311,7 +311,7 @@ func (h *Handler) buildListMaterialUoMsCriteria(q url.Values) (model.ListMateria
 
 	c.FilterMaterialUoM.Description = q.Get("description")
 
-	h.sort(q, &c.Sort, &messages)
+	h.sort(q, &c.Sort, &messages, model.IsAvailableToSortMaterialUoM)
 	h.paginate(q, &c.Page, &messages)
 
 	return c, strings.Join(messages, ", ")
@@ -323,15 +323,15 @@ func (h *Handler) buildListMaterialGroupsCriteria(q url.Values) (model.ListMater
 
 	c.FilterMaterialGroup.Description = q.Get("description")
 
-	h.sort(q, &c.Sort, &messages)
+	h.sort(q, &c.Sort, &messages, model.IsAvailableToSortMaterialGroup)
 	h.paginate(q, &c.Page, &messages)
 
 	return c, strings.Join(messages, ", ")
 }
 
-func (h *Handler) sort(q url.Values, sortCriteria *model.Sort, messages *[]string) {
-	if fieldName := q.Get("fieldName"); len(fieldName) != 0 {
-		if !model.IsAvailableToSortMaterialUoM(fieldName) {
+func (h *Handler) sort(q url.Values, sortCriteria *model.Sort, messages *[]string, isAvailable func(string) bool) {
+	if fieldName := q.Get("sortBy"); len(fieldName) != 0 {
+		if !isAvailable(fieldName) {
 			*messages = append(*messages, fmt.Sprintf("fieldName [%s] is not available", fieldName))
 		} else {
 			sortCriteria.FieldName = fieldName

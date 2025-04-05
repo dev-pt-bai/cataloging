@@ -137,8 +137,8 @@ func (h *Handler) buildListUsersCriteria(q url.Values) (model.ListUsersCriteria,
 }
 
 func (h *Handler) sort(q url.Values, sortCriteria *model.Sort, messages *[]string) {
-	if fieldName := q.Get("fieldName"); len(fieldName) != 0 {
-		if !model.IsAvailableToSortMaterialUoM(fieldName) {
+	if fieldName := q.Get("sortBy"); len(fieldName) != 0 {
+		if !model.IsAvailableToSortUser(fieldName) {
 			*messages = append(*messages, fmt.Sprintf("fieldName [%s] is not available", fieldName))
 		} else {
 			sortCriteria.FieldName = fieldName
