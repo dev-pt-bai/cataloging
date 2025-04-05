@@ -19,6 +19,13 @@ type MaterialUoM struct {
 	UpdatedAt   int64  `json:"updatedAt"`
 }
 
+type MaterialGroup struct {
+	Code        string `json:"code"`
+	Description string `json:"description"`
+	CreatedAt   int64  `json:"createdAt"`
+	UpdatedAt   int64  `json:"updatedAt"`
+}
+
 type UpsertMaterialTypeRequest struct {
 	Code        string `json:"code"`
 	Description string `json:"description"`
@@ -79,6 +86,36 @@ func (r UpsertMaterialUoMRequest) Model() MaterialUoM {
 	}
 }
 
+type UpsertMaterialGroupRequest struct {
+	Code        string `json:"code"`
+	Description string `json:"description"`
+}
+
+func (r UpsertMaterialGroupRequest) Validate() error {
+	messages := make([]string, 0, 5)
+
+	if len(r.Code) == 0 {
+		messages = append(messages, "material group's code is required")
+	}
+
+	if len(r.Description) == 0 {
+		messages = append(messages, "material group's description is required")
+	}
+
+	if len(messages) > 0 {
+		return errors.New(strings.Join(messages, ","))
+	}
+
+	return nil
+}
+
+func (r UpsertMaterialGroupRequest) Model() MaterialGroup {
+	return MaterialGroup{
+		Code:        r.Code,
+		Description: r.Description,
+	}
+}
+
 type ListMaterialTypesCriteria struct {
 	FilterMaterialType
 	Sort
@@ -96,5 +133,15 @@ type ListMaterialUoMsCriteria struct {
 }
 
 type FilterMaterialUoM struct {
+	Description string
+}
+
+type ListMaterialGroupsCriteria struct {
+	FilterMaterialGroup
+	Sort
+	Page
+}
+
+type FilterMaterialGroup struct {
 	Description string
 }
