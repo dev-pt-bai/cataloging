@@ -19,8 +19,8 @@ func New(db *sql.DB) *Repository {
 }
 
 const CreateMaterialTypeQuery = `
-INSERT INTO "cataloging".material_types (code, description)
-	VALUES ($1, $2)
+INSERT INTO "cataloging".material_types (code, description, val_class)
+	VALUES ($1, $2, $3)
 	ON CONFLICT DO NOTHING`
 
 const CreateMaterialUoMQuery = `
@@ -34,7 +34,7 @@ INSERT INTO "cataloging".material_groups (code, description)
 	ON CONFLICT DO NOTHING`
 
 const ListMaterialTypeQuery = `
-SELECT code, description, CAST (EXTRACT (EPOCH FROM created_at) AS integer), CAST (EXTRACT (EPOCH FROM updated_at) AS integer)
+SELECT code, description, val_class, CAST (EXTRACT (EPOCH FROM created_at) AS integer), CAST (EXTRACT (EPOCH FROM updated_at) AS integer)
 	FROM "cataloging".material_types `
 
 const ListMaterialUoMQuery = `
@@ -46,7 +46,7 @@ SELECT code, description, CAST (EXTRACT (EPOCH FROM created_at) AS integer), CAS
 	FROM "cataloging".material_groups `
 
 const GetMaterialTypeByCodeQuery = `
-SELECT code, description, CAST (EXTRACT (EPOCH FROM created_at) AS integer), CAST (EXTRACT (EPOCH FROM updated_at) AS integer)
+SELECT code, description, val_class, CAST (EXTRACT (EPOCH FROM created_at) AS integer), CAST (EXTRACT (EPOCH FROM updated_at) AS integer)
 	FROM "cataloging".material_types
 	WHERE code = $1 AND deleted_at IS NULL`
 
@@ -61,7 +61,7 @@ SELECT code, description, CAST (EXTRACT (EPOCH FROM created_at) AS integer), CAS
 	WHERE code = $1 AND deleted_at IS NULL`
 
 const UpdateMaterialTypeQuery = `
-UPDATE "cataloging".material_types SET (description, updated_at) = ($2, NOW())
+UPDATE "cataloging".material_types SET (description, val_class, updated_at) = ($2, $3, NOW())
 	WHERE code = $1 AND deleted_at IS NULL`
 
 const UpdateMaterialUoMQuery = `
@@ -85,7 +85,7 @@ UPDATE "cataloging".material_groups SET deleted_at = NOW()
 	WHERE code = $1`
 
 func (r *Repository) CreateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error {
-	res, err := r.db.ExecContext(ctx, CreateMaterialTypeQuery, mt.Code, mt.Description)
+	res, err := r.db.ExecContext(ctx, CreateMaterialTypeQuery, mt.Code, mt.Description, mt.ValuationClass)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
@@ -150,20 +150,20 @@ func (r *Repository) ListMaterialTypes(ctx context.Context, criteria model.ListM
 	}
 	defer rows.Close()
 
-	mtypes := make([]*model.MaterialType, 0, 10)
+	mts := make([]*model.MaterialType, 0, 10)
 	for rows.Next() {
-		mtype := new(model.MaterialType)
-		if err := rows.Scan(&mtype.Code, &mtype.Description, &mtype.CreatedAt, &mtype.UpdatedAt); err != nil {
+		mt := new(model.MaterialType)
+		if err := rows.Scan(&mt.Code, &mt.Description, &mt.ValuationClass, &mt.CreatedAt, &mt.UpdatedAt); err != nil {
 			return nil, errors.New(errors.ScanRowsFailure).Wrap(err)
 		}
-		mtypes = append(mtypes, mtype)
+		mts = append(mts, mt)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, errors.New(errors.ScanRowsFailure).Wrap(err)
 	}
 
-	return mtypes, nil
+	return mts, nil
 }
 
 func (r *Repository) ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) ([]*model.MaterialUoM, *errors.Error) {
@@ -365,7 +365,7 @@ func (r *Repository) paginate(page model.Page, param *listParam) *errors.Error {
 
 func (r *Repository) GetMaterialTypeByCode(ctx context.Context, code string) (*model.MaterialType, *errors.Error) {
 	mt := new(model.MaterialType)
-	err := r.db.QueryRowContext(ctx, GetMaterialTypeByCodeQuery, code).Scan(&mt.Code, &mt.Description, &mt.CreatedAt, &mt.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, GetMaterialTypeByCodeQuery, code).Scan(&mt.Code, &mt.Description, &mt.ValuationClass, &mt.CreatedAt, &mt.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.New(errors.MaterialTypeNotFound)
@@ -403,7 +403,7 @@ func (r *Repository) GetMaterialGroupByCode(ctx context.Context, code string) (*
 }
 
 func (r *Repository) UpdateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error {
-	res, err := r.db.ExecContext(ctx, UpdateMaterialTypeQuery, mt.Code, mt.Description)
+	res, err := r.db.ExecContext(ctx, UpdateMaterialTypeQuery, mt.Code, mt.Description, mt.ValuationClass)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}

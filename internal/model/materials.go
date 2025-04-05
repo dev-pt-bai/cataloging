@@ -6,10 +6,11 @@ import (
 )
 
 type MaterialType struct {
-	Code        string `json:"code"`
-	Description string `json:"description"`
-	CreatedAt   int64  `json:"createdAt"`
-	UpdatedAt   int64  `json:"updatedAt"`
+	Code           string  `json:"code"`
+	Description    string  `json:"description"`
+	ValuationClass *string `json:"valuationClass"`
+	CreatedAt      int64   `json:"createdAt"`
+	UpdatedAt      int64   `json:"updatedAt"`
 }
 
 type MaterialUoM struct {
@@ -27,8 +28,9 @@ type MaterialGroup struct {
 }
 
 type UpsertMaterialTypeRequest struct {
-	Code        string `json:"code"`
-	Description string `json:"description"`
+	Code           string  `json:"code"`
+	Description    string  `json:"description"`
+	ValuationClass *string `json:"valuationClass"`
 }
 
 func (r UpsertMaterialTypeRequest) Validate() error {
@@ -51,8 +53,9 @@ func (r UpsertMaterialTypeRequest) Validate() error {
 
 func (r UpsertMaterialTypeRequest) Model() MaterialType {
 	return MaterialType{
-		Code:        r.Code,
-		Description: r.Description,
+		Code:           r.Code,
+		Description:    r.Description,
+		ValuationClass: r.ValuationClass,
 	}
 }
 

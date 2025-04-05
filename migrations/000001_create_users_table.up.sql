@@ -13,6 +13,6 @@ CREATE TABLE IF NOT EXISTS "cataloging".users (
     deleted_at  TIMESTAMPTZ
 );
 
-CREATE UNIQUE INDEX users_id_unique ON "cataloging".users(id) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS users_id_unique ON "cataloging".users(id) WHERE deleted_at IS NULL;
 
 COMMIT;

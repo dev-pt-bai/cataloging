@@ -204,7 +204,7 @@ func (h *Handler) ListMaterialTypes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users, err := h.service.ListMaterialTypes(r.Context(), criteria)
+	mts, err := h.service.ListMaterialTypes(r.Context(), criteria)
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
@@ -221,7 +221,7 @@ func (h *Handler) ListMaterialTypes(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{
-		"data": users,
+		"data": mts,
 	})
 }
 
