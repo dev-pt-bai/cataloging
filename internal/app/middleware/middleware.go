@@ -44,8 +44,9 @@ func JSONFormatter(next http.Handler, _ *configs.Config) http.Handler {
 }
 
 var whitelistAuth map[string]struct{} = map[string]struct{}{
-	"POST /users": {},
-	"POST /login": {},
+	"POST /users":   {},
+	"POST /login":   {},
+	"POST /refresh": {},
 }
 
 func Authenticator(next http.Handler, config *configs.Config) http.Handler {
@@ -60,7 +61,7 @@ func Authenticator(next http.Handler, config *configs.Config) http.Handler {
 
 		header := r.Header.Get("Authorization")
 		if len(header) == 0 {
-			slog.ErrorContext(r.Context(), errors.New(errors.MissingAuthorizationHeader).Code(), slog.String("requestID", requestID))
+			slog.ErrorContext(r.Context(), errors.MissingAuthorizationHeader.String(), slog.String("requestID", requestID))
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{
 				"errorCode": errors.MissingAuthorizationHeader.String(),
@@ -70,7 +71,7 @@ func Authenticator(next http.Handler, config *configs.Config) http.Handler {
 
 		headerElements := strings.Split(header, " ")
 		if len(headerElements) != 2 || headerElements[0] != "Bearer" {
-			slog.ErrorContext(r.Context(), errors.New(errors.InvalidAuthorizationType).Code(), slog.String("requestID", requestID))
+			slog.ErrorContext(r.Context(), errors.InvalidAuthorizationType.String(), slog.String("requestID", requestID))
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{
 				"errorCode": errors.InvalidAuthorizationType.String(),
@@ -89,8 +90,17 @@ func Authenticator(next http.Handler, config *configs.Config) http.Handler {
 			return
 		}
 
+		if claims.IsRefreshToken {
+			slog.ErrorContext(r.Context(), errors.IllegalUseOfRefreshToken.String(), slog.String("requestID", requestID))
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{
+				"errorCode": errors.IllegalUseOfRefreshToken.String(),
+			})
+			return
+		}
+
 		if time.Unix(int64(claims.ExpiredAt), 0).Before(time.Now()) {
-			slog.ErrorContext(r.Context(), errors.New(errors.ExpiredToken).Code(), slog.String("requestID", requestID))
+			slog.ErrorContext(r.Context(), errors.ExpiredToken.String(), slog.String("requestID", requestID))
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{
 				"errorCode": errors.ExpiredToken.String(),

@@ -33,10 +33,24 @@ func (s *Service) Login(ctx context.Context, user model.User) (*model.Auth, *err
 		return nil, errors.New(errors.UserPasswordMismatch).Wrap(err)
 	}
 
-	token, expiredAt, err := auth.GenerateToken(u.ID, u.IsAdmin, s.config)
+	auth, err := auth.GenerateToken(u.ID, u.IsAdmin, s.config)
 	if err != nil {
 		return nil, err
 	}
 
-	return &model.Auth{Token: token, ExpiredAt: expiredAt}, nil
+	return auth, nil
+}
+
+func (s *Service) RefreshToken(ctx context.Context, userID string) (*model.Auth, *errors.Error) {
+	u, err := s.repository.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	newAuth, err := auth.GenerateAccessToken(u.ID, u.IsAdmin, s.config)
+	if err != nil {
+		return nil, err
+	}
+
+	return newAuth, nil
 }

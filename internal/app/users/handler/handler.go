@@ -3,8 +3,12 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
 
 	"github.com/dev-pt-bai/cataloging/internal/app/middleware"
 	"github.com/dev-pt-bai/cataloging/internal/model"
@@ -13,6 +17,7 @@ import (
 
 type Service interface {
 	CreateUser(ctx context.Context, user model.User) *errors.Error
+	ListUsers(ctx context.Context, criteria model.ListUsersCriteria) ([]*model.User, *errors.Error)
 	GetUserByID(ctx context.Context, ID string) (*model.User, *errors.Error)
 	UpdateUser(ctx context.Context, user model.User) *errors.Error
 	DeleteUserByID(ctx context.Context, ID string) *errors.Error
@@ -31,7 +36,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	req := model.UpsertUserRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONDecodeFailure.String(),
@@ -41,7 +46,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	if err := req.Validate(); err != nil {
-		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		slog.ErrorContext(r.Context(), errors.New(errors.JSONValidationFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONValidationFailure.String(),
@@ -52,7 +57,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	if err := h.service.CreateUser(r.Context(), req.Model()); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
-		case err.HasCode(errors.UserAlreadyExists):
+		case err.HasCodes(errors.UserAlreadyExists):
 			w.WriteHeader(http.StatusConflict)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -64,6 +69,116 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
+	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+
+	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
+	if !auth.IsAdmin {
+		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.ResourceIsForbidden.String(),
+		})
+		return
+	}
+
+	queries := r.URL.Query()
+	criteria, errMessages := h.buildListUsersCriteria(queries)
+	if len(errMessages) != 0 {
+		slog.ErrorContext(r.Context(), errMessages, slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.InvalidQueryParameter.String(),
+		})
+		return
+	}
+
+	users, err := h.service.ListUsers(r.Context(), criteria)
+	if err != nil {
+		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		switch {
+		case err.HasCodes(errors.InvalidQueryParameter, errors.InvalidPageNumber, errors.InvalidItemNumberPerPage):
+			w.WriteHeader(http.StatusBadRequest)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": err.Code(),
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]any{
+		"data": users,
+	})
+}
+
+func (h *Handler) buildListUsersCriteria(q url.Values) (model.ListUsersCriteria, string) {
+	c := model.ListUsersCriteria{}
+	messages := make([]string, 0, 5)
+
+	c.FilterUser.Name = q.Get("name")
+
+	if isAdminStr := q.Get("isAdmin"); len(isAdminStr) != 0 {
+		isAdmin, err := strconv.ParseBool(isAdminStr)
+		if err != nil {
+			messages = append(messages, fmt.Sprintf("isAdmin: %s", err.Error()))
+		} else {
+			c.FilterUser.IsAdmin = &isAdmin
+		}
+	}
+
+	if fieldName := q.Get("fieldName"); len(fieldName) != 0 {
+		if !model.IsAvailableToSortUser(fieldName) {
+			messages = append(messages, fmt.Sprintf("fieldName [%s] is not available", fieldName))
+		} else {
+			c.Sort.FieldName = fieldName
+		}
+	}
+
+	if isDecendingStr := q.Get("isDescending"); len(isDecendingStr) != 0 {
+		isDescending, err := strconv.ParseBool(q.Get("isDescending"))
+		if err != nil {
+			messages = append(messages, fmt.Sprintf("isDescending: %s", err.Error()))
+		} else {
+			c.Sort.IsDescending = isDescending
+		}
+	}
+
+	if limitStr := q.Get("limit"); len(limitStr) != 0 {
+		limit, err := strconv.ParseInt(limitStr, 10, 0)
+		if err != nil {
+			messages = append(messages, fmt.Sprintf("limit: %s", err.Error()))
+		} else if limit < 1 || limit > 20 {
+			messages = append(messages, fmt.Sprintf("limit [%d] is out of range", limit))
+		} else {
+			c.Page.ItemPerPage = limit
+		}
+	} else {
+		c.Page.ItemPerPage = 20
+	}
+
+	if pageStr := q.Get("page"); len(pageStr) != 0 {
+		page, err := strconv.ParseInt(pageStr, 10, 0)
+		if err != nil {
+			messages = append(messages, fmt.Sprintf("page: %s", err.Error()))
+		} else if page < 0 {
+			messages = append(messages, fmt.Sprintf("page [%d] is out of range", page))
+		} else {
+			c.Page.Number = page
+		}
+	} else {
+		c.Page.Number = 1
+	}
+
+	if len(messages) > 0 {
+		return c, strings.Join(messages, ", ")
+	}
+
+	return c, ""
 }
 
 func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +199,7 @@ func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
-		case err.HasCode(errors.UserNotFound):
+		case err.HasCodes(errors.UserNotFound):
 			w.WriteHeader(http.StatusNotFound)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -117,7 +232,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	req := model.UpsertUserRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONDecodeFailure.String(),
@@ -127,7 +242,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	if err := req.Validate(); err != nil {
-		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		slog.ErrorContext(r.Context(), errors.New(errors.JSONValidationFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONValidationFailure.String(),
@@ -138,7 +253,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	if err := h.service.UpdateUser(r.Context(), req.Model()); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
-		case err.HasCode(errors.UserNotFound):
+		case err.HasCodes(errors.UserNotFound):
 			w.WriteHeader(http.StatusNotFound)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)

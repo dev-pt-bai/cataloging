@@ -68,7 +68,7 @@ func (r UpsertUserRequest) Validate() error {
 	}
 
 	if len(messages) > 0 {
-		return errors.New(strings.Join(messages, ","))
+		return errors.New(strings.Join(messages, ", "))
 	}
 
 	return nil
@@ -83,7 +83,13 @@ func (r UpsertUserRequest) Model() User {
 	}
 }
 
-type LoginRequest struct {
-	ID       string `json:"id"`
-	Password string `json:"password"`
+type ListUsersCriteria struct {
+	FilterUser
+	Sort
+	Page
+}
+
+type FilterUser struct {
+	Name    string
+	IsAdmin *bool
 }

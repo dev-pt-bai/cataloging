@@ -1,6 +1,9 @@
 package errors
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 type ErrorCode string
 
@@ -11,6 +14,9 @@ func (e ErrorCode) String() string {
 const (
 	JSONDecodeFailure          ErrorCode = "400001"
 	JSONValidationFailure      ErrorCode = "400002"
+	InvalidQueryParameter      ErrorCode = "400003"
+	InvalidItemNumberPerPage   ErrorCode = "400004"
+	InvalidPageNumber          ErrorCode = "400005"
 	UserPasswordMismatch       ErrorCode = "401001"
 	MissingAuthorizationHeader ErrorCode = "401002"
 	InvalidAuthorizationType   ErrorCode = "401003"
@@ -19,12 +25,17 @@ const (
 	InvalidToken               ErrorCode = "401006"
 	ExpiredToken               ErrorCode = "401007"
 	ResourceIsForbidden        ErrorCode = "403001"
+	IllegalUseOfRefreshToken   ErrorCode = "403002"
+	IllegalUserOfAccessToken   ErrorCode = "403003"
 	UserNotFound               ErrorCode = "404001"
 	UserAlreadyExists          ErrorCode = "409001"
 	GeneratePasswordFailure    ErrorCode = "500001"
 	RunQueryFailure            ErrorCode = "500002"
 	RowsAffectedFailure        ErrorCode = "500003"
-	SigningJWTFailure          ErrorCode = "500004"
+	ScanRowsFailure            ErrorCode = "500004"
+	BuildQueryFailure          ErrorCode = "500005"
+	UnknownField               ErrorCode = "500006"
+	SigningJWTFailure          ErrorCode = "500007"
 )
 
 type Error struct {
@@ -49,11 +60,11 @@ func (e *Error) Code() string {
 	return string(e.code)
 }
 
-func (e *Error) HasCode(code ErrorCode) bool {
+func (e *Error) HasCodes(codes ...ErrorCode) bool {
 	if e == nil {
 		return false
 	}
-	return e.code == code
+	return slices.Contains(codes, e.code)
 }
 
 func (e *Error) Wrap(cause error) *Error {
