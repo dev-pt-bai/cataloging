@@ -46,9 +46,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
-		case err.HasCodes(errors.UserNotFound):
+		case err.ContainsCodes(errors.UserNotFound):
 			w.WriteHeader(http.StatusNotFound)
-		case err.HasCodes(errors.UserPasswordMismatch):
+		case err.ContainsCodes(errors.UserPasswordMismatch):
 			w.WriteHeader(http.StatusUnauthorized)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -130,7 +130,7 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
-		case err.HasCodes(errors.UserNotFound):
+		case err.ContainsCodes(errors.UserNotFound):
 			w.WriteHeader(http.StatusNotFound)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)

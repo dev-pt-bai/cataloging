@@ -57,7 +57,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	if err := h.service.CreateUser(r.Context(), req.Model()); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
-		case err.HasCodes(errors.UserAlreadyExists):
+		case err.ContainsCodes(errors.UserAlreadyExists):
 			w.WriteHeader(http.StatusConflict)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -98,7 +98,7 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
-		case err.HasCodes(errors.InvalidQueryParameter, errors.InvalidPageNumber, errors.InvalidItemNumberPerPage):
+		case err.ContainsCodes(errors.InvalidQueryParameter, errors.InvalidPageNumber, errors.InvalidItemNumberPerPage):
 			w.WriteHeader(http.StatusBadRequest)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -194,7 +194,7 @@ func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
-		case err.HasCodes(errors.UserNotFound):
+		case err.ContainsCodes(errors.UserNotFound):
 			w.WriteHeader(http.StatusNotFound)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -247,7 +247,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	if err := h.service.UpdateUser(r.Context(), req.Model()); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
-		case err.HasCodes(errors.UserNotFound):
+		case err.ContainsCodes(errors.UserNotFound):
 			w.WriteHeader(http.StatusNotFound)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)

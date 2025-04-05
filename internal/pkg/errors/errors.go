@@ -29,8 +29,10 @@ const (
 	IllegalUserOfAccessToken   ErrorCode = "403003"
 	UserNotFound               ErrorCode = "404001"
 	MaterialTypeNotFound       ErrorCode = "404002"
+	MaterialUoMNotFound        ErrorCode = "404003"
 	UserAlreadyExists          ErrorCode = "409001"
 	MaterialTypeAlreadyExists  ErrorCode = "409002"
+	MaterialUoMAlreadyExists   ErrorCode = "409003"
 	GeneratePasswordFailure    ErrorCode = "500001"
 	RunQueryFailure            ErrorCode = "500002"
 	RowsAffectedFailure        ErrorCode = "500003"
@@ -62,7 +64,7 @@ func (e *Error) Code() string {
 	return string(e.code)
 }
 
-func (e *Error) HasCodes(codes ...ErrorCode) bool {
+func (e *Error) ContainsCodes(codes ...ErrorCode) bool {
 	if e == nil {
 		return false
 	}
