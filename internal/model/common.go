@@ -44,3 +44,14 @@ func IsAvailableToSortMaterialUoM(fieldName string) bool {
 
 	return availableToSort
 }
+
+var materialGroupsFieldToSort map[string]struct{} = map[string]struct{}{
+	"code":        {},
+	"description": {},
+}
+
+func IsAvailableToSortMaterialGroup(fieldName string) bool {
+	_, availableToSort := materialGroupsFieldToSort[fieldName]
+
+	return availableToSort
+}

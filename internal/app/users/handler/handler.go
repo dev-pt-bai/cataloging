@@ -130,58 +130,64 @@ func (h *Handler) buildListUsersCriteria(q url.Values) (model.ListUsersCriteria,
 		}
 	}
 
+	h.sort(q, &c.Sort, &messages)
+	h.paginate(q, &c.Page, &messages)
+
+	return c, strings.Join(messages, ", ")
+}
+
+func (h *Handler) sort(q url.Values, sortCriteria *model.Sort, messages *[]string) {
 	if fieldName := q.Get("fieldName"); len(fieldName) != 0 {
-		if !model.IsAvailableToSortUser(fieldName) {
-			messages = append(messages, fmt.Sprintf("fieldName [%s] is not available", fieldName))
+		if !model.IsAvailableToSortMaterialUoM(fieldName) {
+			*messages = append(*messages, fmt.Sprintf("fieldName [%s] is not available", fieldName))
 		} else {
-			c.Sort.FieldName = fieldName
+			sortCriteria.FieldName = fieldName
 		}
 	}
 
 	if isDecendingStr := q.Get("isDescending"); len(isDecendingStr) != 0 {
 		isDescending, err := strconv.ParseBool(q.Get("isDescending"))
 		if err != nil {
-			messages = append(messages, fmt.Sprintf("isDescending: %s", err.Error()))
+			*messages = append(*messages, fmt.Sprintf("isDescending: %s", err.Error()))
 		} else {
-			c.Sort.IsDescending = isDescending
+			sortCriteria.IsDescending = isDescending
 		}
 	}
+}
 
+func (h *Handler) paginate(q url.Values, page *model.Page, messages *[]string) {
 	if limitStr := q.Get("limit"); len(limitStr) != 0 {
 		limit, err := strconv.ParseInt(limitStr, 10, 0)
 		if err != nil {
-			messages = append(messages, fmt.Sprintf("limit: %s", err.Error()))
+			*messages = append(*messages, fmt.Sprintf("limit: %s", err.Error()))
 		} else if limit < 1 || limit > 20 {
-			messages = append(messages, fmt.Sprintf("limit [%d] is out of range", limit))
+			*messages = append(*messages, fmt.Sprintf("limit [%d] is out of range", limit))
 		} else {
-			c.Page.ItemPerPage = limit
+			page.ItemPerPage = limit
 		}
 	} else {
-		c.Page.ItemPerPage = 20
+		page.ItemPerPage = 20
 	}
 
 	if pageStr := q.Get("page"); len(pageStr) != 0 {
-		page, err := strconv.ParseInt(pageStr, 10, 0)
+		pageInt, err := strconv.ParseInt(pageStr, 10, 0)
 		if err != nil {
-			messages = append(messages, fmt.Sprintf("page: %s", err.Error()))
-		} else if page < 0 {
-			messages = append(messages, fmt.Sprintf("page [%d] is out of range", page))
+			*messages = append(*messages, fmt.Sprintf("page: %s", err.Error()))
+		} else if pageInt < 0 {
+			*messages = append(*messages, fmt.Sprintf("page [%d] is out of range", pageInt))
 		} else {
-			c.Page.Number = page
+			page.Number = pageInt
 		}
 	} else {
-		c.Page.Number = 1
+		page.Number = 1
 	}
-
-	return c, strings.Join(messages, ", ")
 }
 
 func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
-	userID := r.PathValue("id")
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if auth.UserID != userID && !auth.IsAdmin {
+	if auth.UserID != r.PathValue("id") && !auth.IsAdmin {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -190,7 +196,7 @@ func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.service.GetUserByID(r.Context(), userID)
+	user, err := h.service.GetUserByID(r.Context(), auth.UserID)
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
@@ -264,9 +270,8 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeleteUserByID(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
-	userID := r.PathValue("id")
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if auth.UserID != userID && !auth.IsAdmin {
+	if auth.UserID != r.PathValue("id") && !auth.IsAdmin {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -275,7 +280,7 @@ func (h *Handler) DeleteUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeleteUserByID(r.Context(), userID); err != nil {
+	if err := h.service.DeleteUserByID(r.Context(), auth.UserID); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{

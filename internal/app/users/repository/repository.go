@@ -86,14 +86,14 @@ func (r *Repository) ListUsers(ctx context.Context, criteria model.ListUsersCrit
 	return users, nil
 }
 
-type listUserParam struct {
+type listParam struct {
 	q           strings.Builder
 	args        []any
 	placeholder int
 }
 
 func (r *Repository) buildListUsersQuery(criteria model.ListUsersCriteria) (string, []any, error) {
-	param := listUserParam{
+	param := listParam{
 		q:           strings.Builder{},
 		args:        make([]any, 0, 5),
 		placeholder: 1,
@@ -101,7 +101,7 @@ func (r *Repository) buildListUsersQuery(criteria model.ListUsersCriteria) (stri
 	param.q.WriteString(ListUserQuery)
 
 	r.filterUser(criteria.FilterUser, &param)
-	if err := r.sortUser(criteria.Sort, &param); err != nil {
+	if err := r.sort(criteria.Sort, &param, model.IsAvailableToSortUser); err != nil {
 		return "", nil, err
 	}
 	if err := r.paginate(criteria.Page, &param); err != nil {
@@ -111,7 +111,7 @@ func (r *Repository) buildListUsersQuery(criteria model.ListUsersCriteria) (stri
 	return param.q.String(), param.args, nil
 }
 
-func (r *Repository) filterUser(filter model.FilterUser, param *listUserParam) {
+func (r *Repository) filterUser(filter model.FilterUser, param *listParam) {
 	whereClauses := make([]string, 0, 5)
 	whereClauses = append(whereClauses, "deleted_at IS NULL ")
 
@@ -128,13 +128,13 @@ func (r *Repository) filterUser(filter model.FilterUser, param *listUserParam) {
 	param.q.WriteString(fmt.Sprintf("WHERE %s ", strings.Join(whereClauses, "AND ")))
 }
 
-func (r *Repository) sortUser(sortCriteria model.Sort, param *listUserParam) *errors.Error {
+func (r *Repository) sort(sortCriteria model.Sort, param *listParam, isAvailable func(string) bool) *errors.Error {
 	if len(sortCriteria.FieldName) == 0 {
 		param.q.WriteString("ORDER BY created_at DESC ")
 		return nil
 	}
 
-	if !model.IsAvailableToSortUser(sortCriteria.FieldName) {
+	if !isAvailable(sortCriteria.FieldName) {
 		return errors.New(errors.UnknownField)
 	}
 	param.q.WriteString(fmt.Sprintf("ORDER BY %s ", sortCriteria.FieldName))
@@ -148,7 +148,7 @@ func (r *Repository) sortUser(sortCriteria model.Sort, param *listUserParam) *er
 	return nil
 }
 
-func (r *Repository) paginate(page model.Page, param *listUserParam) *errors.Error {
+func (r *Repository) paginate(page model.Page, param *listParam) *errors.Error {
 	if page.ItemPerPage < 1 || page.ItemPerPage > 20 {
 		return errors.New(errors.InvalidItemNumberPerPage)
 	}
