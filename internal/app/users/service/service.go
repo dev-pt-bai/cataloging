@@ -10,6 +10,7 @@ import (
 
 type Repository interface {
 	CreateUser(ctx context.Context, user model.User) *errors.Error
+	ListUsers(ctx context.Context, criteria model.ListUsersCriteria) ([]*model.User, *errors.Error)
 	GetUserByID(ctx context.Context, ID string) (*model.User, *errors.Error)
 	UpdateUser(ctx context.Context, user model.User) *errors.Error
 	DeleteUserByID(ctx context.Context, ID string) *errors.Error
@@ -35,6 +36,10 @@ func (s *Service) CreateUser(ctx context.Context, user model.User) *errors.Error
 	}
 
 	return nil
+}
+
+func (s *Service) ListUsers(ctx context.Context, criteria model.ListUsersCriteria) ([]*model.User, *errors.Error) {
+	return s.repository.ListUsers(ctx, criteria)
 }
 
 func (s *Service) GetUserByID(ctx context.Context, ID string) (*model.User, *errors.Error) {

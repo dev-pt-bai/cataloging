@@ -70,14 +70,16 @@ func (a *App) Start() error {
 	userHandler := uhandler.New(userService)
 
 	authService := aservice.New(userRepository, config)
-	authHandler := ahandler.New(authService)
+	authHandler := ahandler.New(authService, config)
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("POST /login", authHandler.Login)
+	mux.HandleFunc("POST /refresh", authHandler.RefreshToken)
 	mux.HandleFunc("POST /users", userHandler.CreateUser)
+	mux.HandleFunc("GET /users", userHandler.ListUsers)
 	mux.HandleFunc("GET /users/{id}", userHandler.GetUserByID)
 	mux.HandleFunc("PUT /users/{id}", userHandler.UpdateUser)
 	mux.HandleFunc("DELETE /users/{id}", userHandler.DeleteUserByID)
-	mux.HandleFunc("POST /login", authHandler.Login)
 
 	var newHandler http.Handler
 	middlewares := []middleware.MiddlewareFunc{
