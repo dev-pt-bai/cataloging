@@ -33,3 +33,14 @@ func IsAvailableToSortMaterialType(fieldName string) bool {
 
 	return availableToSort
 }
+
+var materialUoMsFieldToSort map[string]struct{} = map[string]struct{}{
+	"code":        {},
+	"description": {},
+}
+
+func IsAvailableToSortMaterialUoM(fieldName string) bool {
+	_, availableToSort := materialUoMsFieldToSort[fieldName]
+
+	return availableToSort
+}

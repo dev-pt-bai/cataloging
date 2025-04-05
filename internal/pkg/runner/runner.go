@@ -96,6 +96,11 @@ func (a *App) Start() error {
 	mux.HandleFunc("GET /material_types/{code}", materialHandler.GetMaterialTypeByCode)
 	mux.HandleFunc("PUT /material_types/{code}", materialHandler.UpdateMaterialType)
 	mux.HandleFunc("DELETE /material_types/{code}", materialHandler.DeleteMaterialTypeByCode)
+	mux.HandleFunc("POST /material_uoms", materialHandler.CreateMaterialUoM)
+	mux.HandleFunc("GET /material_uoms", materialHandler.ListMaterialUoMs)
+	mux.HandleFunc("GET /material_uoms/{code}", materialHandler.GetMaterialUoMByCode)
+	mux.HandleFunc("PUT /material_uoms/{code}", materialHandler.UpdateMaterialUoM)
+	mux.HandleFunc("DELETE /material_uoms/{code}", materialHandler.DeleteMaterialUoMByCode)
 
 	var newHandler http.Handler
 	middlewares := []middleware.MiddlewareFunc{
