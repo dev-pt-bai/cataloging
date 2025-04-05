@@ -16,11 +16,11 @@ import (
 )
 
 type Service interface {
-	CreateUser(ctx context.Context, user model.User) *errors.Error
-	ListUsers(ctx context.Context, criteria model.ListUsersCriteria) ([]*model.User, *errors.Error)
-	GetUserByID(ctx context.Context, ID string) (*model.User, *errors.Error)
-	UpdateUser(ctx context.Context, user model.User) *errors.Error
-	DeleteUserByID(ctx context.Context, ID string) *errors.Error
+	CreateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error
+	ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) ([]*model.MaterialType, *errors.Error)
+	GetMaterialTypeByCode(ctx context.Context, code string) (*model.MaterialType, *errors.Error)
+	UpdateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error
+	DeleteMaterialTypeByCode(ctx context.Context, code string) *errors.Error
 }
 
 type Handler struct {
@@ -31,10 +31,20 @@ func New(service Service) *Handler {
 	return &Handler{service: service}
 }
 
-func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateMaterialType(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
-	req := model.UpsertUserRequest{}
+	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
+	if !auth.IsAdmin {
+		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.ResourceIsForbidden.String(),
+		})
+		return
+	}
+
+	req := model.UpsertMaterialTypeRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
@@ -54,10 +64,10 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.CreateUser(r.Context(), req.Model()); err != nil {
+	if err := h.service.CreateMaterialType(r.Context(), req.Model()); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
-		case err.HasCodes(errors.UserAlreadyExists):
+		case err.HasCodes(errors.MaterialTypeAlreadyExists):
 			w.WriteHeader(http.StatusConflict)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -71,20 +81,10 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ListMaterialTypes(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
-	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
-		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(map[string]string{
-			"errorCode": errors.ResourceIsForbidden.String(),
-		})
-		return
-	}
-
-	criteria, errMessages := h.buildListUsersCriteria(r.URL.Query())
+	criteria, errMessages := h.buildListMaterialTypesCriteria(r.URL.Query())
 	if len(errMessages) != 0 {
 		slog.ErrorContext(r.Context(), errMessages, slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
@@ -94,7 +94,7 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users, err := h.service.ListUsers(r.Context(), criteria)
+	users, err := h.service.ListMaterialTypes(r.Context(), criteria)
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
@@ -115,20 +115,11 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handler) buildListUsersCriteria(q url.Values) (model.ListUsersCriteria, string) {
-	c := model.ListUsersCriteria{}
+func (h *Handler) buildListMaterialTypesCriteria(q url.Values) (model.ListMaterialTypesCriteria, string) {
+	c := model.ListMaterialTypesCriteria{}
 	messages := make([]string, 0, 5)
 
-	c.FilterUser.Name = q.Get("name")
-
-	if isAdminStr := q.Get("isAdmin"); len(isAdminStr) != 0 {
-		isAdmin, err := strconv.ParseBool(isAdminStr)
-		if err != nil {
-			messages = append(messages, fmt.Sprintf("isAdmin: %s", err.Error()))
-		} else {
-			c.FilterUser.IsAdmin = &isAdmin
-		}
-	}
+	c.FilterMaterialType.Description = q.Get("description")
 
 	if fieldName := q.Get("fieldName"); len(fieldName) != 0 {
 		if !model.IsAvailableToSortUser(fieldName) {
@@ -176,25 +167,15 @@ func (h *Handler) buildListUsersCriteria(q url.Values) (model.ListUsersCriteria,
 	return c, strings.Join(messages, ", ")
 }
 
-func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetMaterialTypeByCode(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
-	userID := r.PathValue("id")
-	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if auth.UserID != userID && !auth.IsAdmin {
-		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(map[string]string{
-			"errorCode": errors.ResourceIsForbidden.String(),
-		})
-		return
-	}
-
-	user, err := h.service.GetUserByID(r.Context(), userID)
+	code := r.PathValue("code")
+	materialType, err := h.service.GetMaterialTypeByCode(r.Context(), code)
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
-		case err.HasCodes(errors.UserNotFound):
+		case err.HasCodes(errors.MaterialTypeNotFound):
 			w.WriteHeader(http.StatusNotFound)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -207,15 +188,15 @@ func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{
-		"data": user,
+		"data": materialType,
 	})
 }
 
-func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateMaterialType(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if auth.UserID != r.PathValue("id") && !auth.IsAdmin {
+	if !auth.IsAdmin {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -224,7 +205,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := model.UpsertUserRequest{}
+	req := model.UpsertMaterialTypeRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
@@ -235,6 +216,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	req.Code = r.PathValue("code")
 	if err := req.Validate(); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONValidationFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
@@ -244,10 +226,10 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.UpdateUser(r.Context(), req.Model()); err != nil {
+	if err := h.service.UpdateMaterialType(r.Context(), req.Model()); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
-		case err.HasCodes(errors.UserNotFound):
+		case err.HasCodes(errors.MaterialTypeNotFound):
 			w.WriteHeader(http.StatusNotFound)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -261,12 +243,11 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *Handler) DeleteUserByID(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteMaterialTypeByCode(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
-	userID := r.PathValue("id")
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if auth.UserID != userID && !auth.IsAdmin {
+	if !auth.IsAdmin {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -275,7 +256,7 @@ func (h *Handler) DeleteUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeleteUserByID(r.Context(), userID); err != nil {
+	if err := h.service.DeleteMaterialTypeByCode(r.Context(), r.PathValue("code")); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{

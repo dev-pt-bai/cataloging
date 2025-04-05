@@ -113,6 +113,8 @@ func (r *Repository) buildListUsersQuery(criteria model.ListUsersCriteria) (stri
 
 func (r *Repository) filterUser(filter model.FilterUser, param *listUserParam) {
 	whereClauses := make([]string, 0, 5)
+	whereClauses = append(whereClauses, "deleted_at IS NULL ")
+
 	if len(filter.Name) != 0 {
 		whereClauses = append(whereClauses, fmt.Sprintf("name ILIKE '%%' || $%d || '%%' ", param.placeholder))
 		param.args = append(param.args, filter.Name)
@@ -121,10 +123,6 @@ func (r *Repository) filterUser(filter model.FilterUser, param *listUserParam) {
 
 	if filter.IsAdmin != nil {
 		whereClauses = append(whereClauses, fmt.Sprintf("is_admin IS %v ", *filter.IsAdmin))
-	}
-
-	if len(whereClauses) == 0 {
-		return
 	}
 
 	param.q.WriteString(fmt.Sprintf("WHERE %s ", strings.Join(whereClauses, "AND ")))
@@ -164,7 +162,7 @@ func (r *Repository) paginate(page model.Page, param *listUserParam) *errors.Err
 	param.placeholder++
 
 	param.q.WriteString(fmt.Sprintf("OFFSET $%d ", param.placeholder))
-	param.args = append(param.args, page.Number-1)
+	param.args = append(param.args, (page.Number-1)*page.ItemPerPage)
 
 	return nil
 }
