@@ -18,12 +18,9 @@ type Secret struct {
 }
 
 type Database struct {
-	Host     string `json:"host"`
-	Port     uint16 `json:"port"`
 	User     string `json:"user"`
 	Password string `json:"password"`
 	Name     string `json:"name"`
-	SSLMode  string `json:"SSLMode"`
 }
 
 type Config struct {

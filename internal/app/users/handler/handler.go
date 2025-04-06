@@ -126,7 +126,7 @@ func (h *Handler) buildListUsersCriteria(q url.Values) (model.ListUsersCriteria,
 		if err != nil {
 			messages = append(messages, fmt.Sprintf("isAdmin: %s", err.Error()))
 		} else {
-			c.FilterUser.IsAdmin = &isAdmin
+			c.FilterUser.IsAdmin = model.NewFlag(isAdmin)
 		}
 	}
 
@@ -186,8 +186,9 @@ func (h *Handler) paginate(q url.Values, page *model.Page, messages *[]string) {
 func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
+	userID := r.PathValue("id")
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if auth.UserID != r.PathValue("id") && !auth.IsAdmin {
+	if auth.UserID != userID && !auth.IsAdmin {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -196,7 +197,7 @@ func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.service.GetUserByID(r.Context(), auth.UserID)
+	user, err := h.service.GetUserByID(r.Context(), userID)
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
@@ -220,8 +221,9 @@ func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
+	userID := r.PathValue("id")
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if auth.UserID != r.PathValue("id") && !auth.IsAdmin {
+	if auth.UserID != userID && !auth.IsAdmin {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -240,6 +242,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+	req.ID = userID
 
 	if err := req.Validate(); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONValidationFailure).Wrap(err).Error(), slog.String("requestID", requestID))
@@ -270,8 +273,9 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeleteUserByID(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
+	userID := r.PathValue("id")
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if auth.UserID != r.PathValue("id") && !auth.IsAdmin {
+	if auth.UserID != userID && !auth.IsAdmin {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -280,7 +284,7 @@ func (h *Handler) DeleteUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeleteUserByID(r.Context(), auth.UserID); err != nil {
+	if err := h.service.DeleteUserByID(r.Context(), userID); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{

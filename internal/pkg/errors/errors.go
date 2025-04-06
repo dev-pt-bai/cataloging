@@ -3,6 +3,8 @@ package errors
 import (
 	"fmt"
 	"slices"
+
+	"github.com/go-sql-driver/mysql"
 )
 
 type ErrorCode string
@@ -83,4 +85,11 @@ func (e *Error) Wrap(cause error) *Error {
 
 func New(code ErrorCode) *Error {
 	return &Error{code: code}
+}
+
+func HasMySQLErrCode(err error, c uint16) bool {
+	if merr, ok := err.(*mysql.MySQLError); ok {
+		return merr.Number == c
+	}
+	return false
 }

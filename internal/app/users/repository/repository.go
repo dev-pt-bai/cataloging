@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
@@ -19,40 +20,33 @@ func New(db *sql.DB) *Repository {
 }
 
 const CreateUserQuery = `
-INSERT INTO "cataloging".users (id, name, email, password)
-	VALUES ($1, $2, $3, $4)
-	ON CONFLICT DO NOTHING`
+INSERT INTO users (id, name, email, password)
+	VALUES (?, ?, ?, ?)`
 
 const ListUserQuery = `
-SELECT id, name, email, password, is_admin, CAST (EXTRACT (EPOCH FROM created_at) AS integer), CAST (EXTRACT (EPOCH FROM updated_at) AS integer)
-	FROM "cataloging".users `
+SELECT id, name, email, password, is_admin, created_at, updated_at
+	FROM users `
 
 const GetUserByIDQuery = `
-SELECT id, name, email, password, is_admin, CAST (EXTRACT (EPOCH FROM created_at) AS integer), CAST (EXTRACT (EPOCH FROM updated_at) AS integer)
-	FROM "cataloging".users
-	WHERE id = $1 AND deleted_at IS NULL`
+SELECT id, name, email, password, is_admin, created_at, updated_at
+	FROM users
+	WHERE id = ? AND deleted_at = 0`
 
 const UpdateUserQuery = `
-UPDATE "cataloging".users SET (name, email, password, updated_at) = ($2, $3, $4, NOW())
-	WHERE id = $1 AND deleted_at IS NULL`
+UPDATE users SET name = ?, email = ?, password = ?, updated_at = ?
+	WHERE id = ? AND deleted_at = 0`
 
 const DeleteUserQuery = `
-UPDATE "cataloging".users SET deleted_at = NOW()
-	WHERE id = $1`
+UPDATE users SET deleted_at = ?
+	WHERE id = ?`
 
 func (r *Repository) CreateUser(ctx context.Context, user model.User) *errors.Error {
-	res, err := r.db.ExecContext(ctx, CreateUserQuery, user.ID, user.Name, user.Email, user.Password)
+	_, err := r.db.ExecContext(ctx, CreateUserQuery, user.ID, user.Name, user.Email, user.Password)
 	if err != nil {
+		if errors.HasMySQLErrCode(err, 1062) {
+			return errors.New(errors.UserAlreadyExists).Wrap(err)
+		}
 		return errors.New(errors.RunQueryFailure).Wrap(err)
-	}
-
-	row, err := res.RowsAffected()
-	if err != nil {
-		return errors.New(errors.RowsAffectedFailure).Wrap(err)
-	}
-
-	if row < 1 {
-		return errors.New(errors.UserAlreadyExists)
 	}
 
 	return nil
@@ -87,16 +81,14 @@ func (r *Repository) ListUsers(ctx context.Context, criteria model.ListUsersCrit
 }
 
 type listParam struct {
-	q           strings.Builder
-	args        []any
-	placeholder int
+	q    strings.Builder
+	args []any
 }
 
 func (r *Repository) buildListUsersQuery(criteria model.ListUsersCriteria) (string, []any, error) {
 	param := listParam{
-		q:           strings.Builder{},
-		args:        make([]any, 0, 5),
-		placeholder: 1,
+		q:    strings.Builder{},
+		args: make([]any, 0, 5),
 	}
 	param.q.WriteString(ListUserQuery)
 
@@ -113,16 +105,16 @@ func (r *Repository) buildListUsersQuery(criteria model.ListUsersCriteria) (stri
 
 func (r *Repository) filterUser(filter model.FilterUser, param *listParam) {
 	whereClauses := make([]string, 0, 5)
-	whereClauses = append(whereClauses, "deleted_at IS NULL ")
+	whereClauses = append(whereClauses, "deleted_at = 0 ")
 
 	if len(filter.Name) != 0 {
-		whereClauses = append(whereClauses, fmt.Sprintf("name ILIKE '%%' || $%d || '%%' ", param.placeholder))
-		param.args = append(param.args, filter.Name)
-		param.placeholder++
+		whereClauses = append(whereClauses, "name LIKE ? ")
+		param.args = append(param.args, fmt.Sprintf("%%%s%%", filter.Name))
 	}
 
 	if filter.IsAdmin != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("is_admin IS %v ", *filter.IsAdmin))
+		whereClauses = append(whereClauses, "is_admin = ? ")
+		param.args = append(param.args, *filter.IsAdmin)
 	}
 
 	param.q.WriteString(fmt.Sprintf("WHERE %s ", strings.Join(whereClauses, "AND ")))
@@ -157,11 +149,10 @@ func (r *Repository) paginate(page model.Page, param *listParam) *errors.Error {
 		return errors.New(errors.InvalidItemNumberPerPage)
 	}
 
-	param.q.WriteString(fmt.Sprintf("LIMIT $%d ", param.placeholder))
+	param.q.WriteString("LIMIT ? ")
 	param.args = append(param.args, page.ItemPerPage)
-	param.placeholder++
 
-	param.q.WriteString(fmt.Sprintf("OFFSET $%d ", param.placeholder))
+	param.q.WriteString("OFFSET ? ")
 	param.args = append(param.args, (page.Number-1)*page.ItemPerPage)
 
 	return nil
@@ -181,7 +172,7 @@ func (r *Repository) GetUserByID(ctx context.Context, ID string) (*model.User, *
 }
 
 func (r *Repository) UpdateUser(ctx context.Context, user model.User) *errors.Error {
-	res, err := r.db.ExecContext(ctx, UpdateUserQuery, user.ID, user.Name, user.Email, user.Password)
+	res, err := r.db.ExecContext(ctx, UpdateUserQuery, user.Name, user.Email, user.Password, time.Now().Unix(), user.ID)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
@@ -199,7 +190,7 @@ func (r *Repository) UpdateUser(ctx context.Context, user model.User) *errors.Er
 }
 
 func (r *Repository) DeleteUserByID(ctx context.Context, ID string) *errors.Error {
-	_, err := r.db.ExecContext(ctx, DeleteUserQuery, ID)
+	_, err := r.db.ExecContext(ctx, DeleteUserQuery, time.Now().Unix(), ID)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}

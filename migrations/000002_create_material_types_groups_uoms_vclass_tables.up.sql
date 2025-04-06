@@ -1,34 +1,38 @@
+SET autocommit = OFF;
+
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS "cataloging".material_types (
-    code        TEXT NOT NULL,
-    description TEXT NOT NULL,
-    val_class   TEXT,
-    created_at  TIMESTAMPTZ DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at  TIMESTAMPTZ
+CREATE TABLE IF NOT EXISTS material_types (
+    code        VARCHAR(255) NOT NULL,
+    description TEXT(65535)  NOT NULL,
+    val_class   VARCHAR(255),
+    created_at  INT UNSIGNED DEFAULT (UNIX_TIMESTAMP()),
+    updated_at  INT UNSIGNED DEFAULT (UNIX_TIMESTAMP()),
+    deleted_at  INT UNSIGNED DEFAULT 0,
+
+    PRIMARY KEY (code, deleted_at)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS material_types_code_unique ON "cataloging".material_types(code) WHERE deleted_at IS NULL;
+CREATE TABLE IF NOT EXISTS material_uoms (
+    code        VARCHAR(255) NOT NULL,
+    description TEXT(65535)  NOT NULL,
+    created_at  INT UNSIGNED DEFAULT (UNIX_TIMESTAMP()),
+    updated_at  INT UNSIGNED DEFAULT (UNIX_TIMESTAMP()),
+    deleted_at  INT UNSIGNED DEFAULT 0,
 
-CREATE TABLE IF NOT EXISTS "cataloging".material_uoms (
-    code        TEXT NOT NULL,
-    description TEXT NOT NULL,
-    created_at  TIMESTAMPTZ DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at  TIMESTAMPTZ
+    PRIMARY KEY (code, deleted_at)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS material_uoms_code_unique ON "cataloging".material_uoms(code) WHERE deleted_at IS NULL;
+CREATE TABLE IF NOT EXISTS material_groups (
+    code        VARCHAR(255) NOT NULL,
+    description TEXT(65535)  NOT NULL,
+    created_at  INT UNSIGNED DEFAULT (UNIX_TIMESTAMP()),
+    updated_at  INT UNSIGNED DEFAULT (UNIX_TIMESTAMP()),
+    deleted_at  INT UNSIGNED DEFAULT 0,
 
-CREATE TABLE IF NOT EXISTS "cataloging".material_groups (
-    code        TEXT NOT NULL,
-    description TEXT NOT NULL,
-    created_at  TIMESTAMPTZ DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at  TIMESTAMPTZ
+    PRIMARY KEY (code, deleted_at)
 );
-
-CREATE UNIQUE INDEX IF NOT EXISTS material_groups_code_unique ON "cataloging".material_groups(code) WHERE deleted_at IS NULL;
 
 COMMIT;
+
+SET autocommit = ON;

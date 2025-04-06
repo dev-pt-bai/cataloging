@@ -4,7 +4,7 @@
 
 Before you begin, ensure you have the following installed:
 
-- PostgreSQL
+- MySQL
 
 ### Optional migration tools
 
@@ -63,39 +63,43 @@ In writing the deploy and revert scripts, always wrap it in a transaction to mai
 For example, write:
 
 ```sql
+SET autocommit = OFF;
+
 BEGIN;
 
-CREATE SCHEMA IF NOT EXISTS cataloging;
+CREATE TABLE IF NOT EXISTS users (
+    id          VARCHAR(255)    NOT NULL,
+    name        VARCHAR(255)    NOT NULL,
+    email       VARCHAR(255)    NOT NULL,
+    password    VARCHAR(255)    NOT NULL,
+    is_admin    TINYINT(1)      DEFAULT 0,
+    created_at  INT UNSIGNED    DEFAULT (UNIX_TIMESTAMP()),
+    updated_at  INT UNSIGNED    DEFAULT (UNIX_TIMESTAMP()),
+    deleted_at  INT UNSIGNED    DEFAULT 0,
 
-CREATE TABLE IF NOT EXISTS "cataloging".users (
-    employee_id TEXT        NOT NULL,
-    name        TEXT        NOT NULL,
-    email       TEXT        NOT NULL,
-    created_at  TIMESTAMPTZ DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at  TIMESTAMPTZ,
-
-    CONSTRAINT users_pk PRIMARY KEY (employee_id)
+    PRIMARY KEY (id, deleted_at)
 );
 
 COMMIT;
+
+SET autocommit = ON;
 ```
 
 instead of
 
 ```sql
-CREATE SCHEMA IF NOT EXISTS cataloging;
-
-CREATE TABLE IF NOT EXISTS "cataloging".users (
-    employee_id TEXT        NOT NULL,
-    name        TEXT        NOT NULL,
-    email       TEXT        NOT NULL,
-    created_at  TIMESTAMPTZ DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at  TIMESTAMPTZ,
-
-    CONSTRAINT users_pk PRIMARY KEY (employee_id)
+CREATE TABLE IF NOT EXISTS users (
+    id          VARCHAR(255)    NOT NULL,
+    name        VARCHAR(255)    NOT NULL,
+    email       VARCHAR(255)    NOT NULL,
+    password    VARCHAR(255)    NOT NULL,
+    is_admin    TINYINT(1)      DEFAULT 0,
+    created_at  INT UNSIGNED    DEFAULT (UNIX_TIMESTAMP()),
+    updated_at  INT UNSIGNED    DEFAULT (UNIX_TIMESTAMP()),
+    deleted_at  INT UNSIGNED    DEFAULT 0
 );
+
+CREATE UNIQUE INDEX unique_id_idx ON users (id, deleted_at);
 ```
 
 ## Deploying the migrations
@@ -105,7 +109,7 @@ You may manually run the scripts sequentially forward one by one in the database
 If you use go-migrate, all it takes is just run this command:
 
 ```bash
-migrate -database "postgres://[user][:password]@[host][:port]/[database_name]?param1=value1" -path migrations up
+migrate -database "mysql://[user][:password]@tcp([host][:port])/[database_name]" -path migrations up
 ```
 
 ## Reverting the migrations
@@ -113,13 +117,13 @@ migrate -database "postgres://[user][:password]@[host][:port]/[database_name]?pa
 Similar to the deploying steps, you may manually run the scripts sequentially backward one by one in the database directly, or use go-migrate with this command:
 
 ```bash
-migrate -database "postgres://[user][:password]@[host][:port]/[database_name]?param1=value1" -path migrations down
+migrate -database "mysql://[user][:password]@tcp([host][:port])/[database_name]" -path migrations down
 ```
 
 The above command will revert **ALL** migrations. To revert partially, use this command instead:
 
 ```bash
-migrate -database "postgres://[user][:password]@[host][:port]/[database_name]?param1=value1" -path migrations down [step]
+migrate -database "mysql://[user][:password]@tcp([host][:port])/[database_name]" -path migrations down [step]
 ```
 
 Just specify `step` to tell go-migrate, how many migration scripts will be rolled back from the most recent.
