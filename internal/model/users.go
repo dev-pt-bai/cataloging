@@ -13,7 +13,7 @@ type User struct {
 	Name      string `json:"name"`
 	Email     string `json:"email"`
 	Password  string `json:"-"`
-	IsAdmin   bool   `json:"isAdmin"`
+	IsAdmin   Flag   `json:"isAdmin"`
 	CreatedAt int64  `json:"createdAt"`
 	UpdatedAt int64  `json:"updatedAt"`
 }
@@ -91,5 +91,5 @@ type ListUsersCriteria struct {
 
 type FilterUser struct {
 	Name    string
-	IsAdmin *bool
+	IsAdmin *Flag
 }

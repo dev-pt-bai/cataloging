@@ -471,8 +471,8 @@ func (h *Handler) UpdateMaterialType(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-
 	req.Code = r.PathValue("code")
+
 	if err := req.Validate(); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONValidationFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
@@ -522,8 +522,8 @@ func (h *Handler) UpdateMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-
 	req.Code = r.PathValue("code")
+
 	if err := req.Validate(); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONValidationFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
@@ -573,8 +573,8 @@ func (h *Handler) UpdateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-
 	req.Code = r.PathValue("code")
+
 	if err := req.Validate(); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONValidationFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)

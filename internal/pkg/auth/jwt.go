@@ -9,7 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateToken(userID string, isAdmin bool, config *configs.Config) (*model.Auth, *errors.Error) {
+func GenerateToken(userID string, isAdmin model.Flag, config *configs.Config) (*model.Auth, *errors.Error) {
 	accessExpiredAt := time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC).Unix()
 	refreshExpiredAt := accessExpiredAt
 	if config.App.TokenExpiryHour > 0 {
@@ -48,7 +48,7 @@ func GenerateToken(userID string, isAdmin bool, config *configs.Config) (*model.
 	return &a, nil
 }
 
-func GenerateAccessToken(userID string, isAdmin bool, config *configs.Config) (*model.Auth, *errors.Error) {
+func GenerateAccessToken(userID string, isAdmin model.Flag, config *configs.Config) (*model.Auth, *errors.Error) {
 	accessExpiredAt := time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC).Unix()
 	if config.App.TokenExpiryHour > 0 {
 		accessExpiredAt = time.Now().Add(time.Hour * config.App.TokenExpiryHour).Unix()
@@ -94,7 +94,7 @@ func ParseToken(token string, config *configs.Config) (*model.Auth, *errors.Erro
 	a := model.Auth{
 		IsRefreshToken: func(c map[string]any) bool { isRefreshToken, _ := c["isRefreshToken"].(bool); return isRefreshToken }(claims),
 		UserID:         func(c map[string]any) string { userID, _ := c["userID"].(string); return userID }(claims),
-		IsAdmin:        func(c map[string]any) bool { isAdmin, _ := c["isAdmin"].(bool); return isAdmin }(claims),
+		IsAdmin:        func(c map[string]any) model.Flag { isAdmin, _ := c["isAdmin"].(bool); return model.Flag(isAdmin) }(claims),
 		ExpiredAt:      func(c map[string]any) int64 { expiredAt, _ := c["expiredAt"].(float64); return int64(expiredAt) }(claims),
 	}
 

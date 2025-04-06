@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
@@ -19,120 +20,99 @@ func New(db *sql.DB) *Repository {
 }
 
 const CreateMaterialTypeQuery = `
-INSERT INTO "cataloging".material_types (code, description, val_class)
-	VALUES ($1, $2, $3)
-	ON CONFLICT DO NOTHING`
+INSERT INTO material_types (code, description, val_class)
+	VALUES (?, ?, ?)`
 
 const CreateMaterialUoMQuery = `
-INSERT INTO "cataloging".material_uoms (code, description)
-	VALUES ($1, $2)
-	ON CONFLICT DO NOTHING`
+INSERT INTO material_uoms (code, description)
+	VALUES (?, ?)`
 
 const CreateMaterialGroupQuery = `
-INSERT INTO "cataloging".material_groups (code, description)
-	VALUES ($1, $2)
-	ON CONFLICT DO NOTHING`
+INSERT INTO material_groups (code, description)
+	VALUES (?, ?)`
 
 const ListMaterialTypeQuery = `
-SELECT code, description, val_class, CAST (EXTRACT (EPOCH FROM created_at) AS integer), CAST (EXTRACT (EPOCH FROM updated_at) AS integer)
-	FROM "cataloging".material_types `
+SELECT code, description, val_class, created_at, updated_at
+	FROM material_types `
 
 const ListMaterialUoMQuery = `
-SELECT code, description, CAST (EXTRACT (EPOCH FROM created_at) AS integer), CAST (EXTRACT (EPOCH FROM updated_at) AS integer)
-	FROM "cataloging".material_uoms `
+SELECT code, description, created_at, updated_at
+	FROM material_uoms `
 
 const ListMaterialGroupQuery = `
-SELECT code, description, CAST (EXTRACT (EPOCH FROM created_at) AS integer), CAST (EXTRACT (EPOCH FROM updated_at) AS integer)
-	FROM "cataloging".material_groups `
+SELECT code, description, created_at, updated_at
+	FROM material_groups `
 
 const GetMaterialTypeByCodeQuery = `
-SELECT code, description, val_class, CAST (EXTRACT (EPOCH FROM created_at) AS integer), CAST (EXTRACT (EPOCH FROM updated_at) AS integer)
-	FROM "cataloging".material_types
-	WHERE code = $1 AND deleted_at IS NULL`
+SELECT code, description, val_class, created_at, updated_at
+	FROM material_types
+	WHERE code = ? AND deleted_at = 0`
 
 const GetMaterialUoMByCodeQuery = `
-SELECT code, description, CAST (EXTRACT (EPOCH FROM created_at) AS integer), CAST (EXTRACT (EPOCH FROM updated_at) AS integer)
-	FROM "cataloging".material_uoms
-	WHERE code = $1 AND deleted_at IS NULL`
+SELECT code, description, created_at, updated_at
+	FROM material_uoms
+	WHERE code = ? AND deleted_at = 0`
 
 const GetMaterialGroupByCodeQuery = `
-SELECT code, description, CAST (EXTRACT (EPOCH FROM created_at) AS integer), CAST (EXTRACT (EPOCH FROM updated_at) AS integer)
-	FROM "cataloging".material_groups
-	WHERE code = $1 AND deleted_at IS NULL`
+SELECT code, description, created_at, updated_at
+	FROM material_groups
+	WHERE code = ? AND deleted_at = 0`
 
 const UpdateMaterialTypeQuery = `
-UPDATE "cataloging".material_types SET (description, val_class, updated_at) = ($2, $3, NOW())
-	WHERE code = $1 AND deleted_at IS NULL`
+UPDATE material_types SET description = ?, val_class = ?, updated_at = ?
+	WHERE code = ? AND deleted_at = 0`
 
 const UpdateMaterialUoMQuery = `
-UPDATE "cataloging".material_uoms SET (description, updated_at) = ($2, NOW())
-	WHERE code = $1 AND deleted_at IS NULL`
+UPDATE material_uoms SET description = ?, updated_at = ?
+	WHERE code = ? AND deleted_at = 0`
 
 const UpdateMaterialGroupQuery = `
-UPDATE "cataloging".material_groups SET (description, updated_at) = ($2, NOW())
-	WHERE code = $1 AND deleted_at IS NULL`
+UPDATE material_groups SET description = ?, updated_at = ?
+	WHERE code = ? AND deleted_at = 0`
 
 const DeleteMaterialTypeQuery = `
-UPDATE "cataloging".material_types SET deleted_at = NOW()
-	WHERE code = $1`
+UPDATE material_types SET deleted_at = ?
+	WHERE code = ?`
 
 const DeleteMaterialUoMQuery = `
-UPDATE "cataloging".material_uoms SET deleted_at = NOW()
-	WHERE code = $1`
+UPDATE material_uoms SET deleted_at = ?
+	WHERE code = ?`
 
 const DeleteMaterialGroupQuery = `
-UPDATE "cataloging".material_groups SET deleted_at = NOW()
-	WHERE code = $1`
+UPDATE material_groups SET deleted_at = ?
+	WHERE code = ?`
 
 func (r *Repository) CreateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error {
-	res, err := r.db.ExecContext(ctx, CreateMaterialTypeQuery, mt.Code, mt.Description, mt.ValuationClass)
+	_, err := r.db.ExecContext(ctx, CreateMaterialTypeQuery, mt.Code, mt.Description, mt.ValuationClass)
 	if err != nil {
+		if errors.HasMySQLErrCode(err, 1062) {
+			return errors.New(errors.MaterialTypeAlreadyExists).Wrap(err)
+		}
 		return errors.New(errors.RunQueryFailure).Wrap(err)
-	}
-
-	row, err := res.RowsAffected()
-	if err != nil {
-		return errors.New(errors.RowsAffectedFailure).Wrap(err)
-	}
-
-	if row < 1 {
-		return errors.New(errors.MaterialTypeAlreadyExists)
 	}
 
 	return nil
 }
 
 func (r *Repository) CreateMaterialUoM(ctx context.Context, uom model.MaterialUoM) *errors.Error {
-	res, err := r.db.ExecContext(ctx, CreateMaterialUoMQuery, uom.Code, uom.Description)
+	_, err := r.db.ExecContext(ctx, CreateMaterialUoMQuery, uom.Code, uom.Description)
 	if err != nil {
+		if errors.HasMySQLErrCode(err, 1062) {
+			return errors.New(errors.MaterialUoMAlreadyExists).Wrap(err)
+		}
 		return errors.New(errors.RunQueryFailure).Wrap(err)
-	}
-
-	row, err := res.RowsAffected()
-	if err != nil {
-		return errors.New(errors.RowsAffectedFailure).Wrap(err)
-	}
-
-	if row < 1 {
-		return errors.New(errors.MaterialUoMAlreadyExists)
 	}
 
 	return nil
 }
 
 func (r *Repository) CreateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error {
-	res, err := r.db.ExecContext(ctx, CreateMaterialGroupQuery, mg.Code, mg.Description)
+	_, err := r.db.ExecContext(ctx, CreateMaterialGroupQuery, mg.Code, mg.Description)
 	if err != nil {
+		if errors.HasMySQLErrCode(err, 1062) {
+			return errors.New(errors.MaterialGroupAlreadyExists).Wrap(err)
+		}
 		return errors.New(errors.RunQueryFailure).Wrap(err)
-	}
-
-	row, err := res.RowsAffected()
-	if err != nil {
-		return errors.New(errors.RowsAffectedFailure).Wrap(err)
-	}
-
-	if row < 1 {
-		return errors.New(errors.MaterialGroupAlreadyExists)
 	}
 
 	return nil
@@ -223,16 +203,14 @@ func (r *Repository) ListMaterialGroups(ctx context.Context, criteria model.List
 }
 
 type listParam struct {
-	q           strings.Builder
-	args        []any
-	placeholder int
+	q    strings.Builder
+	args []any
 }
 
 func (r *Repository) buildListMaterialTypesQuery(criteria model.ListMaterialTypesCriteria) (string, []any, error) {
 	param := listParam{
-		q:           strings.Builder{},
-		args:        make([]any, 0, 5),
-		placeholder: 1,
+		q:    strings.Builder{},
+		args: make([]any, 0, 5),
 	}
 	param.q.WriteString(ListMaterialTypeQuery)
 
@@ -249,12 +227,11 @@ func (r *Repository) buildListMaterialTypesQuery(criteria model.ListMaterialType
 
 func (r *Repository) filterMaterialType(filter model.FilterMaterialType, param *listParam) {
 	whereClauses := make([]string, 0, 5)
-	whereClauses = append(whereClauses, "deleted_at IS NULL ")
+	whereClauses = append(whereClauses, "deleted_at = 0 ")
 
 	if len(filter.Description) != 0 {
-		whereClauses = append(whereClauses, fmt.Sprintf("name ILIKE '%%' || $%d || '%%' ", param.placeholder))
-		param.args = append(param.args, filter.Description)
-		param.placeholder++
+		whereClauses = append(whereClauses, "description LIKE ? ")
+		param.args = append(param.args, fmt.Sprintf("%%%s%%", filter.Description))
 	}
 
 	param.q.WriteString(fmt.Sprintf("WHERE %s ", strings.Join(whereClauses, "AND ")))
@@ -262,9 +239,8 @@ func (r *Repository) filterMaterialType(filter model.FilterMaterialType, param *
 
 func (r *Repository) buildListMaterialUoMsQuery(criteria model.ListMaterialUoMsCriteria) (string, []any, error) {
 	param := listParam{
-		q:           strings.Builder{},
-		args:        make([]any, 0, 5),
-		placeholder: 1,
+		q:    strings.Builder{},
+		args: make([]any, 0, 5),
 	}
 	param.q.WriteString(ListMaterialUoMQuery)
 
@@ -281,12 +257,11 @@ func (r *Repository) buildListMaterialUoMsQuery(criteria model.ListMaterialUoMsC
 
 func (r *Repository) filterMaterialUoM(filter model.FilterMaterialUoM, param *listParam) {
 	whereClauses := make([]string, 0, 5)
-	whereClauses = append(whereClauses, "deleted_at IS NULL ")
+	whereClauses = append(whereClauses, "deleted_at = 0 ")
 
 	if len(filter.Description) != 0 {
-		whereClauses = append(whereClauses, fmt.Sprintf("name ILIKE '%%' || $%d || '%%' ", param.placeholder))
-		param.args = append(param.args, filter.Description)
-		param.placeholder++
+		whereClauses = append(whereClauses, "description LIKE ? ")
+		param.args = append(param.args, fmt.Sprintf("%%%s%%", filter.Description))
 	}
 
 	param.q.WriteString(fmt.Sprintf("WHERE %s ", strings.Join(whereClauses, "AND ")))
@@ -294,9 +269,8 @@ func (r *Repository) filterMaterialUoM(filter model.FilterMaterialUoM, param *li
 
 func (r *Repository) buildListMaterialGroupsQuery(criteria model.ListMaterialGroupsCriteria) (string, []any, error) {
 	param := listParam{
-		q:           strings.Builder{},
-		args:        make([]any, 0, 5),
-		placeholder: 1,
+		q:    strings.Builder{},
+		args: make([]any, 0, 5),
 	}
 	param.q.WriteString(ListMaterialGroupQuery)
 
@@ -313,12 +287,11 @@ func (r *Repository) buildListMaterialGroupsQuery(criteria model.ListMaterialGro
 
 func (r *Repository) filterMaterialGroup(filter model.FilterMaterialGroup, param *listParam) {
 	whereClauses := make([]string, 0, 5)
-	whereClauses = append(whereClauses, "deleted_at IS NULL ")
+	whereClauses = append(whereClauses, "deleted_at = 0 ")
 
 	if len(filter.Description) != 0 {
-		whereClauses = append(whereClauses, fmt.Sprintf("name ILIKE '%%' || $%d || '%%' ", param.placeholder))
-		param.args = append(param.args, filter.Description)
-		param.placeholder++
+		whereClauses = append(whereClauses, "description LIKE ? ")
+		param.args = append(param.args, fmt.Sprintf("%%%s%%", filter.Description))
 	}
 
 	param.q.WriteString(fmt.Sprintf("WHERE %s ", strings.Join(whereClauses, "AND ")))
@@ -353,11 +326,10 @@ func (r *Repository) paginate(page model.Page, param *listParam) *errors.Error {
 		return errors.New(errors.InvalidItemNumberPerPage)
 	}
 
-	param.q.WriteString(fmt.Sprintf("LIMIT $%d ", param.placeholder))
+	param.q.WriteString("LIMIT ? ")
 	param.args = append(param.args, page.ItemPerPage)
-	param.placeholder++
 
-	param.q.WriteString(fmt.Sprintf("OFFSET $%d ", param.placeholder))
+	param.q.WriteString("OFFSET ? ")
 	param.args = append(param.args, (page.Number-1)*page.ItemPerPage)
 
 	return nil
@@ -403,7 +375,7 @@ func (r *Repository) GetMaterialGroupByCode(ctx context.Context, code string) (*
 }
 
 func (r *Repository) UpdateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error {
-	res, err := r.db.ExecContext(ctx, UpdateMaterialTypeQuery, mt.Code, mt.Description, mt.ValuationClass)
+	res, err := r.db.ExecContext(ctx, UpdateMaterialTypeQuery, mt.Description, mt.ValuationClass, time.Now().Unix(), mt.Code)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
@@ -421,7 +393,7 @@ func (r *Repository) UpdateMaterialType(ctx context.Context, mt model.MaterialTy
 }
 
 func (r *Repository) UpdateMaterialUoM(ctx context.Context, uom model.MaterialUoM) *errors.Error {
-	res, err := r.db.ExecContext(ctx, UpdateMaterialUoMQuery, uom.Code, uom.Description)
+	res, err := r.db.ExecContext(ctx, UpdateMaterialUoMQuery, uom.Description, time.Now().Unix(), uom.Code)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
@@ -439,7 +411,7 @@ func (r *Repository) UpdateMaterialUoM(ctx context.Context, uom model.MaterialUo
 }
 
 func (r *Repository) UpdateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error {
-	res, err := r.db.ExecContext(ctx, UpdateMaterialGroupQuery, mg.Code, mg.Description)
+	res, err := r.db.ExecContext(ctx, UpdateMaterialGroupQuery, mg.Description, time.Now().Unix(), mg.Code)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
@@ -457,7 +429,7 @@ func (r *Repository) UpdateMaterialGroup(ctx context.Context, mg model.MaterialG
 }
 
 func (r *Repository) DeleteMaterialTypeByCode(ctx context.Context, code string) *errors.Error {
-	_, err := r.db.ExecContext(ctx, DeleteMaterialTypeQuery, code)
+	_, err := r.db.ExecContext(ctx, DeleteMaterialTypeQuery, time.Now().Unix(), code)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
@@ -466,7 +438,7 @@ func (r *Repository) DeleteMaterialTypeByCode(ctx context.Context, code string) 
 }
 
 func (r *Repository) DeleteMaterialUoMByCode(ctx context.Context, code string) *errors.Error {
-	_, err := r.db.ExecContext(ctx, DeleteMaterialUoMQuery, code)
+	_, err := r.db.ExecContext(ctx, DeleteMaterialUoMQuery, time.Now().Unix(), code)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}

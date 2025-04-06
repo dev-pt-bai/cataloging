@@ -1,18 +1,20 @@
+SET autocommit = OFF;
+
 BEGIN;
 
-CREATE SCHEMA IF NOT EXISTS cataloging;
+CREATE TABLE IF NOT EXISTS users (
+    id          VARCHAR(255)    NOT NULL,
+    name        VARCHAR(255)    NOT NULL,
+    email       VARCHAR(255)    NOT NULL,
+    password    VARCHAR(255)    NOT NULL,
+    is_admin    TINYINT(1)      DEFAULT 0,
+    created_at  INT UNSIGNED    DEFAULT (UNIX_TIMESTAMP()),
+    updated_at  INT UNSIGNED    DEFAULT (UNIX_TIMESTAMP()),
+    deleted_at  INT UNSIGNED    DEFAULT 0,
 
-CREATE TABLE IF NOT EXISTS "cataloging".users (
-    id          TEXT        NOT NULL,
-    name        TEXT        NOT NULL,
-    email       TEXT        NOT NULL,
-    password    TEXT        NOT NULL,
-    is_admin    BOOLEAN     DEFAULT FALSE,
-    created_at  TIMESTAMPTZ DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at  TIMESTAMPTZ
+    PRIMARY KEY (id, deleted_at)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS users_id_unique ON "cataloging".users(id) WHERE deleted_at IS NULL;
-
 COMMIT;
+
+SET autocommit = ON;
