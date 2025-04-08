@@ -1,8 +1,10 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/mail"
 	"regexp"
 	"strings"
@@ -16,6 +18,53 @@ type User struct {
 	IsAdmin   Flag   `json:"isAdmin"`
 	CreatedAt int64  `json:"createdAt"`
 	UpdatedAt int64  `json:"updatedAt"`
+}
+
+type Users struct {
+	Data  []*User `json:"data"`
+	Count int64   `json:"count"`
+}
+
+func (u *Users) Scan(src any) error {
+	if src == nil {
+		return nil
+	}
+
+	b, ok := src.([]byte)
+	if !ok {
+		return fmt.Errorf("failed to convert src of type [%T] to []byte", src)
+	}
+
+	return json.Unmarshal(b, u)
+}
+
+func (u *Users) Reponse(page Page) map[string]any {
+	if u == nil {
+		return nil
+	}
+	totalPages := int64(math.Ceil(float64(u.Count) / float64(page.ItemPerPage)))
+	return map[string]any{
+		"data": u.Data,
+		"meta": map[string]any{
+			"totalRecords": u.Count,
+			"totalPages":   totalPages,
+			"currentPage":  page.Number,
+			"previousPage": func(currentPage, totalPages int64) *int64 {
+				if currentPage == 1 || currentPage > totalPages+1 {
+					return nil
+				}
+				currentPage--
+				return &currentPage
+			}(page.Number, totalPages),
+			"nextPage": func(currentPage, totalPages int64) *int64 {
+				if currentPage >= totalPages {
+					return nil
+				}
+				currentPage++
+				return &currentPage
+			}(page.Number, totalPages),
+		},
+	}
 }
 
 type UpsertUserRequest struct {

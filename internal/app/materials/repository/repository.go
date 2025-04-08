@@ -447,7 +447,7 @@ func (r *Repository) DeleteMaterialUoMByCode(ctx context.Context, code string) *
 }
 
 func (r *Repository) DeleteMaterialGroupByCode(ctx context.Context, code string) *errors.Error {
-	_, err := r.db.ExecContext(ctx, DeleteMaterialGroupQuery, code)
+	_, err := r.db.ExecContext(ctx, DeleteMaterialGroupQuery, time.Now().Unix(), code)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}

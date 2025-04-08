@@ -14,7 +14,7 @@ Check server's health. On a healthy server, it simply returns `200` response hea
 curl --location '{HOST}:{PORT}/ping'
 ```
 
-### Example response
+#### Example response
 
 - 200
 
@@ -119,7 +119,7 @@ curl --location '{HOST}:{PORT}/users' \
 
 ### GET /users
 
-List existing users with filter, sort criteria and pagination through query parameters. Optional `name` and `isAdmin` parameter are for filtering users based on their name and administrator privilage. Optional `sortBy` parameter accepts `id`, `name`, `email` and `is_admin`, while `isDescending` is either `false` or `true`. Both are for defining sorting criteria. Default sorting criteria is by record's creation time in descending order. Optional `limit` and `page` are for pagination. Default page number and item per page are 1 and 20, respectively. Page number cannot be negative and item per page should be between 1 to 20. List users is exclusively available for administrators only.
+List existing users with filter, sort criteria and pagination through query parameters. Optional `name` and `isAdmin` parameter are for filtering users based on their name and administrator privilage. Optional `sortBy` parameter accepts `id`, `name`, `email` and `is_admin`, while `isDescending` is either `false` or `true`. Both are for defining sorting criteria. Default sorting criteria is by record's creation time in descending order. Optional `limit` and `page` are for pagination. Default page number and item per page are 1 and 20, respectively. Page number must be greater than 0 and item per page should be between 1 to 20. List users is exclusively available for administrators only.
 
 #### Example request
 
@@ -128,7 +128,7 @@ curl --location '{HOST}:{PORT}/users?name=string&isAdmin=bool&sortBy=string&isDe
 --header 'Authorization: Bearer string'
 ```
 
-### Example response
+#### Example response
 
 - 200
 
@@ -143,7 +143,14 @@ curl --location '{HOST}:{PORT}/users?name=string&isAdmin=bool&sortBy=string&isDe
             "createdAt": 0,
             "updatedAt": 0
         }
-    ]
+    ],
+    "meta": {
+        "currentPage": 1,
+        "nextPage": null,
+        "previousPage": null,
+        "totalPages": 1,
+        "totalRecords": 1
+    }
 }
 ```
 
@@ -318,7 +325,7 @@ curl --location '{HOST}:{PORT}/material_groups' \
 
 ### GET /material_types
 
-List existing material types with filter, sort criteria and pagination through query parameters. Optional `description` parameter are for filtering material types based on their description. Optional `sortBy` parameter accepts `code`, `description` and `val_vlass`, while `isDescending` is either `false` or `true`. Both are for defining sorting criteria. Default sorting criteria is by record's creation time in descending order. Optional `limit` and `page` are for pagination. Default page number and item per page are 1 and 20, respectively. Page number cannot be negative and item per page should be between 1 to 20. List material types is available for all users.
+List existing material types with filter, sort criteria and pagination through query parameters. Optional `description` parameter are for filtering material types based on their description. Optional `sortBy` parameter accepts `code`, `description` and `val_vlass`, while `isDescending` is either `false` or `true`. Both are for defining sorting criteria. Default sorting criteria is by record's creation time in descending order. Optional `limit` and `page` are for pagination. Default page number and item per page are 1 and 20, respectively. Page number must be greater than 0 and item per page should be between 1 to 20. List material types is available for all users.
 
 #### Example request
 
@@ -355,7 +362,7 @@ curl --location '{HOST}:{PORT}/material_types?description=string&sortBy=string&i
 
 ### GET /material_uoms
 
-List existing unit of measures with filter, sort criteria and pagination through query parameters. Optional `description` parameter are for filtering unit of measures based on their description. Optional `sortBy` parameter accepts `code` and `description`, while `isDescending` is either `false` or `true`. Both are for defining sorting criteria. Default sorting criteria is by record's creation time in descending order. Optional `limit` and `page` are for pagination. Default page number and item per page are 1 and 20, respectively. Page number cannot be negative and item per page should be between 1 to 20. List unit of measures is available for all users.
+List existing unit of measures with filter, sort criteria and pagination through query parameters. Optional `description` parameter are for filtering unit of measures based on their description. Optional `sortBy` parameter accepts `code` and `description`, while `isDescending` is either `false` or `true`. Both are for defining sorting criteria. Default sorting criteria is by record's creation time in descending order. Optional `limit` and `page` are for pagination. Default page number and item per page are 1 and 20, respectively. Page number must be greater than 0 and item per page should be between 1 to 20. List unit of measures is available for all users.
 
 #### Example request
 
@@ -391,7 +398,7 @@ curl --location '{HOST}:{PORT}/material_uoms?description=string&sortBy=string&is
 
 ### GET /material_groups
 
-List existing material groups with filter, sort criteria and pagination through query parameters. Optional `description` parameter are for filtering unit of measures based on their description. Optional `sortBy` parameter accepts `code` and `description`, while `isDescending` is either `false` or `true`. Both are for defining sorting criteria. Default sorting criteria is by record's creation time in descending order. Optional `limit` and `page` are for pagination. Default page number and item per page are 1 and 20, respectively. Page number cannot be negative and item per page should be between 1 to 20. List unit of measures is available for all users.
+List existing material groups with filter, sort criteria and pagination through query parameters. Optional `description` parameter are for filtering unit of measures based on their description. Optional `sortBy` parameter accepts `code` and `description`, while `isDescending` is either `false` or `true`. Both are for defining sorting criteria. Default sorting criteria is by record's creation time in descending order. Optional `limit` and `page` are for pagination. Default page number and item per page are 1 and 20, respectively. Page number must be greater than 0 and item per page should be between 1 to 20. List unit of measures is available for all users.
 
 #### Example request
 
