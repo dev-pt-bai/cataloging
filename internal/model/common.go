@@ -2,6 +2,7 @@ package model
 
 import (
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 )
 
@@ -76,14 +77,39 @@ func (f Flag) Value() (driver.Value, error) {
 	return int64(0), nil
 }
 
-func (f *Flag) Scan(value any) error {
-	if value == nil {
+func (f *Flag) Scan(src any) error {
+	if src == nil {
 		return nil
 	}
-	i, ok := value.(int64)
+
+	i, ok := src.(int64)
 	if !ok {
-		return fmt.Errorf("failed to convert value of type [%T] to int64", value)
+		return fmt.Errorf("failed to convert src of type [%T] to int64", src)
 	}
 	*f = i == 1
+
 	return nil
+}
+
+func (f *Flag) UnmarshalJSON(src []byte) error {
+	if len(src) == 0 {
+		return nil
+	}
+
+	var i int64
+	if err := json.Unmarshal(src, &i); err != nil {
+		return err
+	}
+	*f = i == 1
+
+	return nil
+}
+
+type List struct {
+	Data []any `json:"data"`
+	Meta Meta  `json:"meta"`
+}
+
+type Meta struct {
+	Page int64 `json:"page"`
 }

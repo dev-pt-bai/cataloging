@@ -24,8 +24,8 @@ INSERT INTO users (id, name, email, password)
 	VALUES (?, ?, ?, ?)`
 
 const ListUserQuery = `
-SELECT id, name, email, password, is_admin, created_at, updated_at
-	FROM users `
+WITH
+	cte1 AS (SELECT JSON_OBJECT('id', id, 'name', name, 'email', email, 'password', password, 'is_admin', is_admin, 'created_at', created_at, 'updated_at', updated_at) AS record FROM users `
 
 const GetUserByIDQuery = `
 SELECT id, name, email, password, is_admin, created_at, updated_at
@@ -52,29 +52,16 @@ func (r *Repository) CreateUser(ctx context.Context, user model.User) *errors.Er
 	return nil
 }
 
-func (r *Repository) ListUsers(ctx context.Context, criteria model.ListUsersCriteria) ([]*model.User, *errors.Error) {
+func (r *Repository) ListUsers(ctx context.Context, criteria model.ListUsersCriteria) (*model.Users, *errors.Error) {
 	query, args, err := r.buildListUsersQuery(criteria)
 	if err != nil {
 		return nil, errors.New(errors.BuildQueryFailure).Wrap(err)
 	}
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
-	if err != nil {
+	users := new(model.Users)
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(&users)
+	if err != nil && err != sql.ErrNoRows {
 		return nil, errors.New(errors.RunQueryFailure).Wrap(err)
-	}
-	defer rows.Close()
-
-	users := make([]*model.User, 0, 10)
-	for rows.Next() {
-		user := new(model.User)
-		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.IsAdmin, &user.CreatedAt, &user.UpdatedAt); err != nil {
-			return nil, errors.New(errors.ScanRowsFailure).Wrap(err)
-		}
-		users = append(users, user)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, errors.New(errors.ScanRowsFailure).Wrap(err)
 	}
 
 	return users, nil
@@ -132,15 +119,17 @@ func (r *Repository) sort(sortCriteria model.Sort, param *listParam, isAvailable
 	param.q.WriteString(fmt.Sprintf("ORDER BY %s ", sortCriteria.FieldName))
 
 	if sortCriteria.IsDescending {
-		param.q.WriteString("DESC ")
+		param.q.WriteString("DESC), ")
 		return nil
 	}
-	param.q.WriteString("ASC ")
+	param.q.WriteString("ASC), ")
 
 	return nil
 }
 
 func (r *Repository) paginate(page model.Page, param *listParam) *errors.Error {
+	param.q.WriteString("cte2 AS (SELECT record FROM cte1 ")
+
 	if page.ItemPerPage < 1 || page.ItemPerPage > 20 {
 		return errors.New(errors.InvalidItemNumberPerPage)
 	}
@@ -152,8 +141,13 @@ func (r *Repository) paginate(page model.Page, param *listParam) *errors.Error {
 	param.q.WriteString("LIMIT ? ")
 	param.args = append(param.args, page.ItemPerPage)
 
-	param.q.WriteString("OFFSET ? ")
+	param.q.WriteString("OFFSET ?), ")
 	param.args = append(param.args, (page.Number-1)*page.ItemPerPage)
+
+	param.q.WriteString(`
+	cte3 AS (SELECT JSON_ARRAYAGG(record) AS data FROM cte2),
+	cte4 AS (SELECT COUNT(*) AS count FROM cte1)
+	SELECT JSON_OBJECT('data', COALESCE(data, CAST('[]' AS JSON)), 'count', count) FROM cte3 JOIN cte4`)
 
 	return nil
 }

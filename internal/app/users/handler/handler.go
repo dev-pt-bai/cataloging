@@ -17,7 +17,7 @@ import (
 
 type Service interface {
 	CreateUser(ctx context.Context, user model.User) *errors.Error
-	ListUsers(ctx context.Context, criteria model.ListUsersCriteria) ([]*model.User, *errors.Error)
+	ListUsers(ctx context.Context, criteria model.ListUsersCriteria) (*model.Users, *errors.Error)
 	GetUserByID(ctx context.Context, ID string) (*model.User, *errors.Error)
 	UpdateUser(ctx context.Context, user model.User) *errors.Error
 	DeleteUserByID(ctx context.Context, ID string) *errors.Error
@@ -110,9 +110,7 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]any{
-		"data": users,
-	})
+	json.NewEncoder(w).Encode(users.Reponse(criteria.Page))
 }
 
 func (h *Handler) buildListUsersCriteria(q url.Values) (model.ListUsersCriteria, string) {
@@ -173,7 +171,7 @@ func (h *Handler) paginate(q url.Values, page *model.Page, messages *[]string) {
 		pageInt, err := strconv.ParseInt(pageStr, 10, 0)
 		if err != nil {
 			*messages = append(*messages, fmt.Sprintf("page: %s", err.Error()))
-		} else if pageInt < 0 {
+		} else if pageInt < 1 {
 			*messages = append(*messages, fmt.Sprintf("page [%d] is out of range", pageInt))
 		} else {
 			page.Number = pageInt
