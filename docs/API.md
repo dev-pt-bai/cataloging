@@ -348,7 +348,14 @@ curl --location '{HOST}:{PORT}/material_types?description=string&sortBy=string&i
             "createdAt": 0,
             "updatedAt": 0
         }
-    ]
+    ],
+    "meta": {
+        "currentPage": 1,
+        "nextPage": null,
+        "previousPage": null,
+        "totalPages": 1,
+        "totalRecords": 1
+    }
 }
 ```
 
@@ -384,7 +391,14 @@ curl --location '{HOST}:{PORT}/material_uoms?description=string&sortBy=string&is
             "createdAt": 0,
             "updatedAt": 0
         }
-    ]
+    ],
+    "meta": {
+        "currentPage": 1,
+        "nextPage": null,
+        "previousPage": null,
+        "totalPages": 1,
+        "totalRecords": 1
+    }
 }
 ```
 
@@ -420,7 +434,14 @@ curl --location '{HOST}:{PORT}/material_groups?description=string&sortBy=string&
             "createdAt": 0,
             "updatedAt": 0
         }
-    ]
+    ],
+    "meta": {
+        "currentPage": 1,
+        "nextPage": null,
+        "previousPage": null,
+        "totalPages": 1,
+        "totalRecords": 1
+    }
 }
 ```
 
