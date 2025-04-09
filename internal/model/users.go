@@ -81,8 +81,16 @@ func (r UpsertUserRequest) Validate() error {
 		messages = append(messages, "user ID is required")
 	}
 
+	if len(r.ID) > 250 {
+		messages = append(messages, "user ID is too long")
+	}
+
 	if len(r.Name) == 0 {
 		messages = append(messages, "user name is required")
+	}
+
+	if len(r.Name) > 250 {
+		messages = append(messages, "user name is too long")
 	}
 
 	if len(r.Email) == 0 {
@@ -91,6 +99,10 @@ func (r UpsertUserRequest) Validate() error {
 		if _, err := mail.ParseAddress(r.Email); err != nil {
 			messages = append(messages, fmt.Sprintf("incorrect email format: %s", err.Error()))
 		}
+	}
+
+	if len(r.Email) > 250 {
+		messages = append(messages, "user email is too long")
 	}
 
 	if len(r.Password) == 0 {

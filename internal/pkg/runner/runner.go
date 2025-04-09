@@ -64,6 +64,10 @@ func (a *App) Start() error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
+	if err := database.Migrate(config); err != nil {
+		return fmt.Errorf("failed to execute migrations: %w", err)
+	}
+
 	db, err := database.NewClient(config)
 	if err != nil {
 		return fmt.Errorf("failed to create database client: %w", err)

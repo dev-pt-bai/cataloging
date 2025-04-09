@@ -184,8 +184,16 @@ func (r UpsertMaterialTypeRequest) Validate() error {
 		messages = append(messages, "material type's code is required")
 	}
 
+	if len(r.Code) > 250 {
+		messages = append(messages, "material type's code is too long")
+	}
+
 	if len(r.Description) == 0 {
 		messages = append(messages, "material type's description is required")
+	}
+
+	if len(r.Description) > 1000 {
+		messages = append(messages, "material type's description is too long")
 	}
 
 	if len(messages) > 0 {
@@ -215,8 +223,16 @@ func (r UpsertMaterialUoMRequest) Validate() error {
 		messages = append(messages, "material uom's code is required")
 	}
 
+	if len(r.Code) > 250 {
+		messages = append(messages, "material uom's code is too long")
+	}
+
 	if len(r.Description) == 0 {
 		messages = append(messages, "material uom's description is required")
+	}
+
+	if len(r.Description) > 1000 {
+		messages = append(messages, "material uom's description is too long")
 	}
 
 	if len(messages) > 0 {
@@ -245,8 +261,16 @@ func (r UpsertMaterialGroupRequest) Validate() error {
 		messages = append(messages, "material group's code is required")
 	}
 
+	if len(r.Code) > 250 {
+		messages = append(messages, "material group's code is too long")
+	}
+
 	if len(r.Description) == 0 {
 		messages = append(messages, "material group's description is required")
+	}
+
+	if len(r.Description) > 1000 {
+		messages = append(messages, "material group's description is too long")
 	}
 
 	if len(messages) > 0 {
