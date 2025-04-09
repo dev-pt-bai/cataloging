@@ -11,9 +11,9 @@ type Repository interface {
 	CreateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error
 	CreateMaterialUoM(ctx context.Context, uom model.MaterialUoM) *errors.Error
 	CreateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error
-	ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) ([]*model.MaterialType, *errors.Error)
-	ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) ([]*model.MaterialUoM, *errors.Error)
-	ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) ([]*model.MaterialGroup, *errors.Error)
+	ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) (*model.MaterialTypes, *errors.Error)
+	ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) (*model.MaterialUoMs, *errors.Error)
+	ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) (*model.MaterialGroups, *errors.Error)
 	GetMaterialTypeByCode(ctx context.Context, code string) (*model.MaterialType, *errors.Error)
 	GetMaterialUoMByCode(ctx context.Context, code string) (*model.MaterialUoM, *errors.Error)
 	GetMaterialGroupByCode(ctx context.Context, code string) (*model.MaterialGroup, *errors.Error)
@@ -45,15 +45,15 @@ func (s *Service) CreateMaterialGroup(ctx context.Context, mg model.MaterialGrou
 	return s.repository.CreateMaterialGroup(ctx, mg)
 }
 
-func (s *Service) ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) ([]*model.MaterialType, *errors.Error) {
+func (s *Service) ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) (*model.MaterialTypes, *errors.Error) {
 	return s.repository.ListMaterialTypes(ctx, criteria)
 }
 
-func (s *Service) ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) ([]*model.MaterialUoM, *errors.Error) {
+func (s *Service) ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) (*model.MaterialUoMs, *errors.Error) {
 	return s.repository.ListMaterialUoMs(ctx, criteria)
 }
 
-func (s *Service) ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) ([]*model.MaterialGroup, *errors.Error) {
+func (s *Service) ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) (*model.MaterialGroups, *errors.Error) {
 	return s.repository.ListMaterialGroups(ctx, criteria)
 }
 

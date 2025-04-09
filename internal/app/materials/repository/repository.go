@@ -32,16 +32,16 @@ INSERT INTO material_groups (code, description)
 	VALUES (?, ?)`
 
 const ListMaterialTypeQuery = `
-SELECT code, description, val_class, created_at, updated_at
-	FROM material_types `
+WITH
+	cte1 AS (SELECT JSON_OBJECT('code', code, 'description', description, 'valuationClass', val_class, 'createdAt', created_at, 'updatedAt', updated_at) AS record FROM material_types `
 
 const ListMaterialUoMQuery = `
-SELECT code, description, created_at, updated_at
-	FROM material_uoms `
+WITH
+	cte1 AS (SELECT JSON_OBJECT('code', code, 'description', description, 'createdAt', created_at, 'updatedAt', updated_at) AS record FROM material_uoms `
 
 const ListMaterialGroupQuery = `
-SELECT code, description, created_at, updated_at
-	FROM material_groups `
+WITH
+	cte1 AS (SELECT JSON_OBJECT('code', code, 'description', description, 'createdAt', created_at, 'updatedAt', updated_at) AS record FROM material_groups `
 
 const GetMaterialTypeByCodeQuery = `
 SELECT code, description, val_class, created_at, updated_at
@@ -118,85 +118,46 @@ func (r *Repository) CreateMaterialGroup(ctx context.Context, mg model.MaterialG
 	return nil
 }
 
-func (r *Repository) ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) ([]*model.MaterialType, *errors.Error) {
+func (r *Repository) ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) (*model.MaterialTypes, *errors.Error) {
 	query, args, err := r.buildListMaterialTypesQuery(criteria)
 	if err != nil {
 		return nil, errors.New(errors.BuildQueryFailure).Wrap(err)
 	}
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
-	if err != nil {
+	mts := new(model.MaterialTypes)
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(&mts)
+	if err != nil && err != sql.ErrNoRows {
 		return nil, errors.New(errors.RunQueryFailure).Wrap(err)
-	}
-	defer rows.Close()
-
-	mts := make([]*model.MaterialType, 0, 10)
-	for rows.Next() {
-		mt := new(model.MaterialType)
-		if err := rows.Scan(&mt.Code, &mt.Description, &mt.ValuationClass, &mt.CreatedAt, &mt.UpdatedAt); err != nil {
-			return nil, errors.New(errors.ScanRowsFailure).Wrap(err)
-		}
-		mts = append(mts, mt)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, errors.New(errors.ScanRowsFailure).Wrap(err)
 	}
 
 	return mts, nil
 }
 
-func (r *Repository) ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) ([]*model.MaterialUoM, *errors.Error) {
+func (r *Repository) ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) (*model.MaterialUoMs, *errors.Error) {
 	query, args, err := r.buildListMaterialUoMsQuery(criteria)
 	if err != nil {
 		return nil, errors.New(errors.BuildQueryFailure).Wrap(err)
 	}
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
-	if err != nil {
+	uoms := new(model.MaterialUoMs)
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(&uoms)
+	if err != nil && err != sql.ErrNoRows {
 		return nil, errors.New(errors.RunQueryFailure).Wrap(err)
-	}
-	defer rows.Close()
-
-	uoms := make([]*model.MaterialUoM, 0, 10)
-	for rows.Next() {
-		uom := new(model.MaterialUoM)
-		if err := rows.Scan(&uom.Code, &uom.Description, &uom.CreatedAt, &uom.UpdatedAt); err != nil {
-			return nil, errors.New(errors.ScanRowsFailure).Wrap(err)
-		}
-		uoms = append(uoms, uom)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, errors.New(errors.ScanRowsFailure).Wrap(err)
 	}
 
 	return uoms, nil
 }
 
-func (r *Repository) ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) ([]*model.MaterialGroup, *errors.Error) {
+func (r *Repository) ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) (*model.MaterialGroups, *errors.Error) {
 	query, args, err := r.buildListMaterialGroupsQuery(criteria)
 	if err != nil {
 		return nil, errors.New(errors.BuildQueryFailure).Wrap(err)
 	}
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
-	if err != nil {
+	mgs := new(model.MaterialGroups)
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(&mgs)
+	if err != nil && err != sql.ErrNoRows {
 		return nil, errors.New(errors.RunQueryFailure).Wrap(err)
-	}
-	defer rows.Close()
-
-	mgs := make([]*model.MaterialGroup, 0, 10)
-	for rows.Next() {
-		mg := new(model.MaterialGroup)
-		if err := rows.Scan(&mg.Code, &mg.Description, &mg.CreatedAt, &mg.UpdatedAt); err != nil {
-			return nil, errors.New(errors.ScanRowsFailure).Wrap(err)
-		}
-		mgs = append(mgs, mg)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, errors.New(errors.ScanRowsFailure).Wrap(err)
 	}
 
 	return mgs, nil
@@ -299,7 +260,7 @@ func (r *Repository) filterMaterialGroup(filter model.FilterMaterialGroup, param
 
 func (r *Repository) sort(sortCriteria model.Sort, param *listParam, isAvailable func(string) bool) *errors.Error {
 	if len(sortCriteria.FieldName) == 0 {
-		param.q.WriteString("ORDER BY created_at DESC ")
+		param.q.WriteString("ORDER BY created_at DESC), ")
 		return nil
 	}
 
@@ -309,15 +270,17 @@ func (r *Repository) sort(sortCriteria model.Sort, param *listParam, isAvailable
 	param.q.WriteString(fmt.Sprintf("ORDER BY %s ", sortCriteria.FieldName))
 
 	if sortCriteria.IsDescending {
-		param.q.WriteString("DESC ")
+		param.q.WriteString("DESC), ")
 		return nil
 	}
-	param.q.WriteString("ASC ")
+	param.q.WriteString("ASC), ")
 
 	return nil
 }
 
 func (r *Repository) paginate(page model.Page, param *listParam) *errors.Error {
+	param.q.WriteString("cte2 AS (SELECT record FROM cte1 ")
+
 	if page.ItemPerPage < 1 || page.ItemPerPage > 20 {
 		return errors.New(errors.InvalidItemNumberPerPage)
 	}
@@ -329,8 +292,13 @@ func (r *Repository) paginate(page model.Page, param *listParam) *errors.Error {
 	param.q.WriteString("LIMIT ? ")
 	param.args = append(param.args, page.ItemPerPage)
 
-	param.q.WriteString("OFFSET ? ")
+	param.q.WriteString("OFFSET ?), ")
 	param.args = append(param.args, (page.Number-1)*page.ItemPerPage)
+
+	param.q.WriteString(`
+	cte3 AS (SELECT JSON_ARRAYAGG(record) AS data FROM cte2),
+	cte4 AS (SELECT COUNT(*) AS count FROM cte1)
+	SELECT JSON_OBJECT('data', COALESCE(data, CAST('[]' AS JSON)), 'count', count) FROM cte3 JOIN cte4`)
 
 	return nil
 }

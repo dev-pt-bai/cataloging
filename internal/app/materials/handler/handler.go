@@ -19,9 +19,9 @@ type Service interface {
 	CreateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error
 	CreateMaterialUoM(ctx context.Context, uom model.MaterialUoM) *errors.Error
 	CreateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error
-	ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) ([]*model.MaterialType, *errors.Error)
-	ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) ([]*model.MaterialUoM, *errors.Error)
-	ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) ([]*model.MaterialGroup, *errors.Error)
+	ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) (*model.MaterialTypes, *errors.Error)
+	ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) (*model.MaterialUoMs, *errors.Error)
+	ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) (*model.MaterialGroups, *errors.Error)
 	GetMaterialTypeByCode(ctx context.Context, code string) (*model.MaterialType, *errors.Error)
 	GetMaterialUoMByCode(ctx context.Context, code string) (*model.MaterialUoM, *errors.Error)
 	GetMaterialGroupByCode(ctx context.Context, code string) (*model.MaterialGroup, *errors.Error)
@@ -220,9 +220,7 @@ func (h *Handler) ListMaterialTypes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]any{
-		"data": mts,
-	})
+	json.NewEncoder(w).Encode(mts.Reponse(criteria.Page))
 }
 
 func (h *Handler) ListMaterialUoMs(w http.ResponseWriter, r *http.Request) {
@@ -254,9 +252,7 @@ func (h *Handler) ListMaterialUoMs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]any{
-		"data": uoms,
-	})
+	json.NewEncoder(w).Encode(uoms.Reponse(criteria.Page))
 }
 
 func (h *Handler) ListMaterialGroups(w http.ResponseWriter, r *http.Request) {
@@ -288,9 +284,7 @@ func (h *Handler) ListMaterialGroups(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]any{
-		"data": mgs,
-	})
+	json.NewEncoder(w).Encode(mgs.Reponse(criteria.Page))
 }
 
 func (h *Handler) buildListMaterialTypesCriteria(q url.Values) (model.ListMaterialTypesCriteria, string) {
