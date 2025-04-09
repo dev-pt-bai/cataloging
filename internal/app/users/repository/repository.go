@@ -25,7 +25,7 @@ INSERT INTO users (id, name, email, password)
 
 const ListUserQuery = `
 WITH
-	cte1 AS (SELECT JSON_OBJECT('id', id, 'name', name, 'email', email, 'password', password, 'is_admin', is_admin, 'created_at', created_at, 'updated_at', updated_at) AS record FROM users `
+	cte1 AS (SELECT JSON_OBJECT('id', id, 'name', name, 'email', email, 'password', password, 'isAdmin', is_admin, 'createdAt', created_at, 'updatedAt', updated_at) AS record FROM users `
 
 const GetUserByIDQuery = `
 SELECT id, name, email, password, is_admin, created_at, updated_at
@@ -109,7 +109,7 @@ func (r *Repository) filterUser(filter model.FilterUser, param *listParam) {
 
 func (r *Repository) sort(sortCriteria model.Sort, param *listParam, isAvailable func(string) bool) *errors.Error {
 	if len(sortCriteria.FieldName) == 0 {
-		param.q.WriteString("ORDER BY created_at DESC ")
+		param.q.WriteString("ORDER BY created_at DESC), ")
 		return nil
 	}
 
