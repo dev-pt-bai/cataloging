@@ -17,6 +17,7 @@ import (
 
 type Service interface {
 	CreateUser(ctx context.Context, user model.User) *errors.Error
+	SendVerificationEmail(ctx context.Context, userID string) *errors.Error
 	ListUsers(ctx context.Context, criteria model.ListUsersCriteria) (*model.Users, *errors.Error)
 	GetUserByID(ctx context.Context, ID string) (*model.User, *errors.Error)
 	UpdateUser(ctx context.Context, user model.User) *errors.Error
@@ -69,6 +70,41 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *Handler) SendVerificationEmail(w http.ResponseWriter, r *http.Request) {
+	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+
+	userID := r.PathValue("id")
+	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
+	if auth.UserID != userID && !auth.IsAdmin {
+		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.ResourceIsForbidden.String(),
+		})
+		return
+	}
+
+	if err := h.service.SendVerificationEmail(r.Context(), userID); err != nil {
+		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		switch {
+		case err.ContainsCodes(errors.UserNotFound):
+			w.WriteHeader(http.StatusNotFound)
+		case err.ContainsCodes(errors.UserAlreadyVerified, errors.UserOTPAlreadyExists):
+			w.WriteHeader(http.StatusConflict)
+		case err.ContainsCodes(errors.SendEmailFailure):
+			w.WriteHeader(http.StatusBadGateway)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": err.Code(),
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
@@ -125,6 +161,15 @@ func (h *Handler) buildListUsersCriteria(q url.Values) (model.ListUsersCriteria,
 			messages = append(messages, fmt.Sprintf("isAdmin: %s", err.Error()))
 		} else {
 			c.FilterUser.IsAdmin = model.NewFlag(isAdmin)
+		}
+	}
+
+	if isVerifiedStr := q.Get("isVerified"); len(isVerifiedStr) != 0 {
+		isVerified, err := strconv.ParseBool(isVerifiedStr)
+		if err != nil {
+			messages = append(messages, fmt.Sprintf("isVerified: %s", err.Error()))
+		} else {
+			c.FilterUser.IsVerified = model.NewFlag(isVerified)
 		}
 	}
 

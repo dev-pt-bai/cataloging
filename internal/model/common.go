@@ -17,10 +17,11 @@ type Page struct {
 }
 
 var usersFieldToSort map[string]struct{} = map[string]struct{}{
-	"id":       {},
-	"name":     {},
-	"email":    {},
-	"is_admin": {},
+	"id":          {},
+	"name":        {},
+	"email":       {},
+	"is_admin":    {},
+	"is_verified": {},
 }
 
 func IsAvailableToSortUser(fieldName string) bool {

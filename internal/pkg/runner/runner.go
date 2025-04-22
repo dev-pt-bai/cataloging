@@ -82,7 +82,7 @@ func (a *App) Start() error {
 	settingHandler := shandler.New(config, msGraphClient)
 
 	userRepository := urepository.New(db)
-	userService := uservice.New(userRepository)
+	userService := uservice.New(userRepository, msGraphClient)
 	userHandler := uhandler.New(userService)
 
 	authService := aservice.New(userRepository, config)
@@ -102,6 +102,7 @@ func (a *App) Start() error {
 	mux.HandleFunc("GET /users", userHandler.ListUsers)
 	mux.HandleFunc("GET /users/{id}", userHandler.GetUser)
 	mux.HandleFunc("PUT /users/{id}", userHandler.UpdateUser)
+	mux.HandleFunc("GET /users/{id}/verify", userHandler.SendVerificationEmail)
 	mux.HandleFunc("DELETE /users/{id}", userHandler.DeleteUser)
 	mux.HandleFunc("POST /material_types", materialHandler.CreateMaterialType)
 	mux.HandleFunc("GET /material_types", materialHandler.ListMaterialTypes)

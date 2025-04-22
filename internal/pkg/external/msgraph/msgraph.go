@@ -17,17 +17,19 @@ import (
 )
 
 type Client struct {
-	urlGetToken string
-	token       *model.MSGraphAuth
-	config      *configs.Config
-	client      *http.Client
+	urlGetToken  string
+	urlSendEmail string
+	token        *model.MSGraphAuth
+	config       *configs.Config
+	client       *http.Client
 }
 
 func NewClient(config *configs.Config) *Client {
 	return &Client{
-		urlGetToken: fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", config.External.MsGraph.TenantID),
-		config:      config,
-		client:      http.DefaultClient,
+		urlGetToken:  fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", config.External.MsGraph.TenantID),
+		urlSendEmail: "https://graph.microsoft.com/v1.0/me/sendMail",
+		config:       config,
+		client:       http.DefaultClient,
 	}
 }
 
@@ -170,4 +172,39 @@ func (c *Client) Token(ctx context.Context) (string, *errors.Error) {
 	}
 
 	return c.token.AccessToken, nil
+}
+
+func (c *Client) SendEmail(ctx context.Context, email model.Email) *errors.Error {
+	if err := email.Validate(); err != nil {
+		return errors.New(errors.JSONValidationFailure).Wrap(err)
+	}
+
+	body := new(bytes.Buffer)
+	if err := json.NewEncoder(body).Encode(email); err != nil {
+		return errors.New(errors.JSONEncodeFailure).Wrap(err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.urlSendEmail, body)
+	if err != nil {
+		return errors.New(errors.CreatingHTTPRequestFailure).Wrap(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	token, errToken := c.Token(ctx)
+	if errToken != nil {
+		return errToken
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	res, err := c.client.Do(req)
+	if err != nil {
+		return errors.New(errors.SendHTTPRequestFailure).Wrap(err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusAccepted {
+		return errors.New(errors.SendEmailFailure)
+	}
+
+	return nil
 }

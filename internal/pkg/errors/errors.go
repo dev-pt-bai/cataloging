@@ -29,7 +29,8 @@ const (
 	InvalidToken                 ErrorCode = "401006"
 	ExpiredToken                 ErrorCode = "401007"
 	InvalidMSGraphAuthCode       ErrorCode = "401008"
-	InvalidMSGraphRefreshToken   ErrorCode = "401009"
+	InvalidMSGraphToken          ErrorCode = "401009"
+	InvalidMSGraphRefreshToken   ErrorCode = "401010"
 	ResourceIsForbidden          ErrorCode = "403001"
 	IllegalUseOfRefreshToken     ErrorCode = "403002"
 	IllegalUserOfAccessToken     ErrorCode = "403003"
@@ -38,6 +39,8 @@ const (
 	MaterialUoMNotFound          ErrorCode = "404003"
 	MaterialGroupNotFound        ErrorCode = "404004"
 	UserAlreadyExists            ErrorCode = "409001"
+	UserOTPAlreadyExists         ErrorCode = "409002"
+	UserAlreadyVerified          ErrorCode = "409003"
 	MaterialTypeAlreadyExists    ErrorCode = "409004"
 	MaterialUoMAlreadyExists     ErrorCode = "409005"
 	MaterialGroupAlreadyExists   ErrorCode = "409006"
@@ -54,7 +57,9 @@ const (
 	SigningJWTFailure            ErrorCode = "500009"
 	CreatingHTTPRequestFailure   ErrorCode = "500010"
 	SendHTTPRequestFailure       ErrorCode = "500011"
+	GenerateOTPFailure           ErrorCode = "500012"
 	GetMSGraphTokenFailure       ErrorCode = "502001"
+	SendEmailFailure             ErrorCode = "502002"
 )
 
 type Error struct {
