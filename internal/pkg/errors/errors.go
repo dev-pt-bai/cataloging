@@ -14,36 +14,47 @@ func (e ErrorCode) String() string {
 }
 
 const (
-	JSONDecodeFailure          ErrorCode = "400001"
-	JSONValidationFailure      ErrorCode = "400002"
-	InvalidQueryParameter      ErrorCode = "400003"
-	InvalidItemNumberPerPage   ErrorCode = "400004"
-	InvalidPageNumber          ErrorCode = "400005"
-	UserPasswordMismatch       ErrorCode = "401001"
-	MissingAuthorizationHeader ErrorCode = "401002"
-	InvalidAuthorizationType   ErrorCode = "401003"
-	InvalidJWTSigningMethod    ErrorCode = "401004"
-	ParseTokenFailure          ErrorCode = "401005"
-	InvalidToken               ErrorCode = "401006"
-	ExpiredToken               ErrorCode = "401007"
-	ResourceIsForbidden        ErrorCode = "403001"
-	IllegalUseOfRefreshToken   ErrorCode = "403002"
-	IllegalUserOfAccessToken   ErrorCode = "403003"
-	UserNotFound               ErrorCode = "404001"
-	MaterialTypeNotFound       ErrorCode = "404002"
-	MaterialUoMNotFound        ErrorCode = "404003"
-	MaterialGroupNotFound      ErrorCode = "404004"
-	UserAlreadyExists          ErrorCode = "409001"
-	MaterialTypeAlreadyExists  ErrorCode = "409002"
-	MaterialUoMAlreadyExists   ErrorCode = "409003"
-	MaterialGroupAlreadyExists ErrorCode = "409004"
-	GeneratePasswordFailure    ErrorCode = "500001"
-	RunQueryFailure            ErrorCode = "500002"
-	RowsAffectedFailure        ErrorCode = "500003"
-	ScanRowsFailure            ErrorCode = "500004"
-	BuildQueryFailure          ErrorCode = "500005"
-	UnknownField               ErrorCode = "500006"
-	SigningJWTFailure          ErrorCode = "500007"
+	JSONDecodeFailure            ErrorCode = "400001"
+	JSONEncodeFailure            ErrorCode = "400002"
+	JSONValidationFailure        ErrorCode = "400003"
+	InvalidQueryParameter        ErrorCode = "400004"
+	InvalidItemNumberPerPage     ErrorCode = "400005"
+	InvalidPageNumber            ErrorCode = "400006"
+	UnknownField                 ErrorCode = "400007"
+	UserPasswordMismatch         ErrorCode = "401001"
+	MissingAuthorizationHeader   ErrorCode = "401002"
+	InvalidAuthorizationType     ErrorCode = "401003"
+	InvalidJWTSigningMethod      ErrorCode = "401004"
+	ParseTokenFailure            ErrorCode = "401005"
+	InvalidToken                 ErrorCode = "401006"
+	ExpiredToken                 ErrorCode = "401007"
+	InvalidMSGraphAuthCode       ErrorCode = "401008"
+	InvalidMSGraphRefreshToken   ErrorCode = "401009"
+	ResourceIsForbidden          ErrorCode = "403001"
+	IllegalUseOfRefreshToken     ErrorCode = "403002"
+	IllegalUserOfAccessToken     ErrorCode = "403003"
+	UserNotFound                 ErrorCode = "404001"
+	MaterialTypeNotFound         ErrorCode = "404002"
+	MaterialUoMNotFound          ErrorCode = "404003"
+	MaterialGroupNotFound        ErrorCode = "404004"
+	UserAlreadyExists            ErrorCode = "409001"
+	MaterialTypeAlreadyExists    ErrorCode = "409004"
+	MaterialUoMAlreadyExists     ErrorCode = "409005"
+	MaterialGroupAlreadyExists   ErrorCode = "409006"
+	MissingMSGraphParameter      ErrorCode = "422001"
+	MissingMSGraphAuthCode       ErrorCode = "422002"
+	GeneratePasswordFailure      ErrorCode = "500001"
+	RunQueryFailure              ErrorCode = "500002"
+	RowsAffectedFailure          ErrorCode = "500003"
+	ScanRowsFailure              ErrorCode = "500004"
+	PrepareStatementFailure      ErrorCode = "500005"
+	BuildQueryFailure            ErrorCode = "500006"
+	StartingTransactionFailure   ErrorCode = "500007"
+	CommittingTransactionFailure ErrorCode = "500008"
+	SigningJWTFailure            ErrorCode = "500009"
+	CreatingHTTPRequestFailure   ErrorCode = "500010"
+	SendHTTPRequestFailure       ErrorCode = "500011"
+	GetMSGraphTokenFailure       ErrorCode = "502001"
 )
 
 type Error struct {
@@ -69,10 +80,7 @@ func (e *Error) Code() string {
 }
 
 func (e *Error) ContainsCodes(codes ...ErrorCode) bool {
-	if e == nil {
-		return false
-	}
-	return slices.Contains(codes, e.code)
+	return e != nil && len(codes) > 0 && slices.Contains(codes, e.code)
 }
 
 func (e *Error) Wrap(cause error) *Error {

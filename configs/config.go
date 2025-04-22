@@ -23,10 +23,23 @@ type Database struct {
 	Name     string `json:"name"`
 }
 
+type External struct {
+	MsGraph MsGraph `json:"msGraph"`
+}
+
+type MsGraph struct {
+	TenantID     string   `json:"tenantID"`
+	ClientID     string   `json:"clientID"`
+	ClientSecret string   `json:"clientSecret"`
+	RedirectURI  string   `json:"redirectURI"`
+	Scopes       []string `json:"scopes"`
+}
+
 type Config struct {
 	App      App      `json:"app"`
 	Secret   Secret   `json:"secret"`
 	Database Database `json:"database"`
+	External External `json:"external"`
 }
 
 func Load() (*Config, error) {

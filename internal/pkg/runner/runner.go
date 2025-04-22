@@ -19,10 +19,12 @@ import (
 	mservice "github.com/dev-pt-bai/cataloging/internal/app/materials/service"
 	"github.com/dev-pt-bai/cataloging/internal/app/middleware"
 	phandler "github.com/dev-pt-bai/cataloging/internal/app/ping/handler"
+	shandler "github.com/dev-pt-bai/cataloging/internal/app/settings/handler"
 	uhandler "github.com/dev-pt-bai/cataloging/internal/app/users/handler"
 	urepository "github.com/dev-pt-bai/cataloging/internal/app/users/repository"
 	uservice "github.com/dev-pt-bai/cataloging/internal/app/users/service"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/database"
+	"github.com/dev-pt-bai/cataloging/internal/pkg/external/msgraph"
 )
 
 type App struct {
@@ -73,7 +75,11 @@ func (a *App) Start() error {
 		return fmt.Errorf("failed to create database client: %w", err)
 	}
 
+	msGraphClient := msgraph.NewClient(config)
+
 	pingHandler := phandler.New()
+
+	settingHandler := shandler.New(config, msGraphClient)
 
 	userRepository := urepository.New(db)
 	userService := uservice.New(userRepository)
@@ -88,34 +94,37 @@ func (a *App) Start() error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ping", pingHandler.Ping)
+	mux.HandleFunc("GET /settings/msgraph", settingHandler.GetMSGraphAuthCode)
+	mux.HandleFunc("GET /settings/msgraph/auth", settingHandler.ParseMSGraphAuthCode)
 	mux.HandleFunc("POST /login", authHandler.Login)
 	mux.HandleFunc("POST /refresh", authHandler.RefreshToken)
 	mux.HandleFunc("POST /users", userHandler.CreateUser)
 	mux.HandleFunc("GET /users", userHandler.ListUsers)
-	mux.HandleFunc("GET /users/{id}", userHandler.GetUserByID)
+	mux.HandleFunc("GET /users/{id}", userHandler.GetUser)
 	mux.HandleFunc("PUT /users/{id}", userHandler.UpdateUser)
-	mux.HandleFunc("DELETE /users/{id}", userHandler.DeleteUserByID)
+	mux.HandleFunc("DELETE /users/{id}", userHandler.DeleteUser)
 	mux.HandleFunc("POST /material_types", materialHandler.CreateMaterialType)
 	mux.HandleFunc("GET /material_types", materialHandler.ListMaterialTypes)
-	mux.HandleFunc("GET /material_types/{code}", materialHandler.GetMaterialTypeByCode)
+	mux.HandleFunc("GET /material_types/{code}", materialHandler.GetMaterialType)
 	mux.HandleFunc("PUT /material_types/{code}", materialHandler.UpdateMaterialType)
-	mux.HandleFunc("DELETE /material_types/{code}", materialHandler.DeleteMaterialTypeByCode)
+	mux.HandleFunc("DELETE /material_types/{code}", materialHandler.DeleteMaterialType)
 	mux.HandleFunc("POST /material_uoms", materialHandler.CreateMaterialUoM)
 	mux.HandleFunc("GET /material_uoms", materialHandler.ListMaterialUoMs)
-	mux.HandleFunc("GET /material_uoms/{code}", materialHandler.GetMaterialUoMByCode)
+	mux.HandleFunc("GET /material_uoms/{code}", materialHandler.GetMaterialUoM)
 	mux.HandleFunc("PUT /material_uoms/{code}", materialHandler.UpdateMaterialUoM)
-	mux.HandleFunc("DELETE /material_uoms/{code}", materialHandler.DeleteMaterialUoMByCode)
+	mux.HandleFunc("DELETE /material_uoms/{code}", materialHandler.DeleteMaterialUoM)
 	mux.HandleFunc("POST /material_groups", materialHandler.CreateMaterialGroup)
 	mux.HandleFunc("GET /material_groups", materialHandler.ListMaterialGroups)
-	mux.HandleFunc("GET /material_groups/{code}", materialHandler.GetMaterialGroupByCode)
+	mux.HandleFunc("GET /material_groups/{code}", materialHandler.GetMaterialGroup)
 	mux.HandleFunc("PUT /material_groups/{code}", materialHandler.UpdateMaterialGroup)
-	mux.HandleFunc("DELETE /material_groups/{code}", materialHandler.DeleteMaterialGroupByCode)
+	mux.HandleFunc("DELETE /material_groups/{code}", materialHandler.DeleteMaterialGroup)
 
 	var newHandler http.Handler
 	middlewares := []middleware.MiddlewareFunc{
 		middleware.Authenticator,
 		middleware.JSONFormatter,
 		middleware.Logger,
+		middleware.AccessController,
 	}
 	for i := range middlewares {
 		if i == 0 {

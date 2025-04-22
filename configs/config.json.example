@@ -1,14 +1,27 @@
 {
-    "app: {
+    "app": {
         "port": 8080,
         "tokenExpiryHour": 0
-    }
-    "secret: {
+    },
+    "secret": {
         "jwt": "yourJWTSecret"
-    }
+    },
     "database": {
         "user": "youruser",
         "password": "yourpassword",
         "name": "yourdbname"
+    },
+    "external": {
+        "msGraph": {
+            "tenantID": "yourMSGraphAPITenantID",
+            "clientID": "yourMSGraphAPIClientID",
+            "clientSecret": "yourMSGraphAPIClientSecret",
+            "redirectURI": "yourMSGraphAPIRedirectURI"
+            "scopes": [
+                "files.readwrite",
+                "mail.send",
+                "offline_access"
+            ]
+        }
     }
 }

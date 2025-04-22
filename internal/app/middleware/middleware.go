@@ -39,15 +39,17 @@ func Logger(next http.Handler, _ *configs.Config) http.Handler {
 func JSONFormatter(next http.Handler, _ *configs.Config) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+
 		next.ServeHTTP(w, r)
 	})
 }
 
 var whitelistAuth map[string]struct{} = map[string]struct{}{
-	"GET /ping":     {},
-	"POST /users":   {},
-	"POST /login":   {},
-	"POST /refresh": {},
+	"GET /ping":                  {},
+	"POST /users":                {},
+	"POST /login":                {},
+	"POST /refresh":              {},
+	"GET /settings/msgraph/auth": {},
 }
 
 func Authenticator(next http.Handler, config *configs.Config) http.Handler {
@@ -111,6 +113,21 @@ func Authenticator(next http.Handler, config *configs.Config) http.Handler {
 
 		ctx := context.WithValue(r.Context(), AuthKey, claims)
 		r = r.Clone(ctx)
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func AccessController(next http.Handler, _ *configs.Config) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 
 		next.ServeHTTP(w, r)
 	})
