@@ -21,7 +21,8 @@
                 "files.readwrite",
                 "mail.send",
                 "offline_access"
-            ]
+            ],
+            "refreshIntervalSec": 3600
         }
     }
 }

@@ -30,7 +30,6 @@ const (
 	ExpiredToken                 ErrorCode = "401007"
 	InvalidMSGraphAuthCode       ErrorCode = "401008"
 	InvalidMSGraphToken          ErrorCode = "401009"
-	InvalidMSGraphRefreshToken   ErrorCode = "401010"
 	ResourceIsForbidden          ErrorCode = "403001"
 	IllegalUseOfRefreshToken     ErrorCode = "403002"
 	IllegalUserOfAccessToken     ErrorCode = "403003"

@@ -28,11 +28,12 @@ type External struct {
 }
 
 type MsGraph struct {
-	TenantID     string   `json:"tenantID"`
-	ClientID     string   `json:"clientID"`
-	ClientSecret string   `json:"clientSecret"`
-	RedirectURI  string   `json:"redirectURI"`
-	Scopes       []string `json:"scopes"`
+	TenantID           string        `json:"tenantID"`
+	ClientID           string        `json:"clientID"`
+	ClientSecret       string        `json:"clientSecret"`
+	RedirectURI        string        `json:"redirectURI"`
+	Scopes             []string      `json:"scopes"`
+	RefreshIntervalSec time.Duration `json:"refreshIntervalSec"`
 }
 
 type Config struct {
