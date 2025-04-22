@@ -1,23 +1,59 @@
 package model
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"net/mail"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type User struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	Password  string `json:"-"`
-	IsAdmin   Flag   `json:"isAdmin"`
-	CreatedAt int64  `json:"createdAt"`
-	UpdatedAt int64  `json:"updatedAt"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Email      string `json:"email"`
+	Password   string `json:"-"`
+	IsAdmin    Flag   `json:"isAdmin"`
+	IsVerified Flag   `json:"isVerified"`
+	CreatedAt  int64  `json:"createdAt"`
+	UpdatedAt  int64  `json:"updatedAt"`
+}
+
+type UserOTP struct {
+	UserID    string `json:"userID"`
+	UserEmail string `json:"userEmail"`
+	OTP       string `json:"otp"`
+	ExpiredAt int64  `json:"expiredAt"`
+}
+
+const src = "123456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+
+func (u User) GenerateOTP() (UserOTP, error) {
+	b := make([]byte, 6)
+	n, err := io.ReadAtLeast(rand.Reader, b, 6)
+	if n < 6 {
+		return UserOTP{}, err
+	}
+
+	for i := range b {
+		b[i] = src[int(b[i])%len(src)]
+	}
+
+	return UserOTP{UserID: u.ID, UserEmail: u.Email, OTP: string(b), ExpiredAt: time.Now().Add(5 * time.Minute).Unix()}, nil
+}
+
+func (o UserOTP) NewVerificationEmail() Email {
+	expiredAt := time.Unix(o.ExpiredAt, 0).UTC().Add(7 * time.Hour).Format("02 Jan 2006 15:04")
+	return NewTextEmail(
+		"[Cataloging] Verifikasi Email Anda",
+		fmt.Sprintf("Selamat datang di aplikasi Cataloging,\n\nGunakan kode One-Time-Password (OTP) berikut untuk memverifikasi email Anda:\n\n%s\n\nKode ini hanya berlaku sampai %v WIB.", o.OTP, expiredAt),
+		o.UserEmail,
+	)
 }
 
 type Users struct {
@@ -96,8 +132,13 @@ func (r UpsertUserRequest) Validate() error {
 	if len(r.Email) == 0 {
 		messages = append(messages, "user email is required")
 	} else {
-		if _, err := mail.ParseAddress(r.Email); err != nil {
+		if email, err := mail.ParseAddress(r.Email); err != nil {
 			messages = append(messages, fmt.Sprintf("incorrect email format: %s", err.Error()))
+		} else {
+			at := strings.LastIndex(email.Address, "@")
+			if email.Address[at+1:] != "bai.id" {
+				messages = append(messages, fmt.Sprintf("incorrect email domain: %s", email.Address[at+1:]))
+			}
 		}
 	}
 
@@ -151,6 +192,7 @@ type ListUsersCriteria struct {
 }
 
 type FilterUser struct {
-	Name    string
-	IsAdmin *Flag
+	Name       string
+	IsAdmin    *Flag
+	IsVerified *Flag
 }
