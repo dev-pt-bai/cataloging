@@ -27,38 +27,7 @@ import (
 	"github.com/dev-pt-bai/cataloging/internal/pkg/external/msgraph"
 )
 
-type App struct {
-	Server *http.Server
-}
-
-func Run() {
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
-
-	abortChan := make(chan os.Signal, 1)
-	stopChan := make(chan os.Signal, 1)
-	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)
-
-	a := new(App)
-
-	go func() {
-		if err := a.Start(); err != nil && err != http.ErrServerClosed {
-			slog.Error(err.Error())
-			abortChan <- syscall.SIGTERM
-			return
-		}
-	}()
-
-	select {
-	case <-abortChan:
-		slog.Info("server failed to start")
-	case <-stopChan:
-		if err := a.Stop(); err != nil {
-			slog.Error(err.Error())
-			return
-		}
-		slog.Info("server gracefully stopped")
-	}
-}
+type App struct{ Server *http.Server }
 
 func (a *App) Start() error {
 	config, err := configs.Load()
@@ -158,4 +127,74 @@ func (a *App) Stop() error {
 	defer cancel()
 
 	return a.Server.Shutdown(ctx)
+}
+
+type Scheduler struct{ Ticker *time.Ticker }
+
+func (s *Scheduler) Start() error {
+	config, err := configs.Load()
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
+
+	interval := time.Hour
+	if config.External.MsGraph.RefreshIntervalSec > 0 {
+		interval = config.External.MsGraph.RefreshIntervalSec * time.Second
+	}
+	s.Ticker = time.NewTicker(interval)
+
+	slog.Info("started scheduler")
+
+	for {
+		<-s.Ticker.C
+		msgraph.AutoRefreshToken(config)
+	}
+}
+
+func (s *Scheduler) Stop() {
+	s.Ticker.Stop()
+}
+
+func Run() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
+	abortApp := make(chan bool, 1)
+	stopApp := make(chan os.Signal, 1)
+	signal.Notify(stopApp, syscall.SIGINT, syscall.SIGTERM)
+
+	abortScheduler := make(chan bool, 1)
+
+	a := new(App)
+	s := new(Scheduler)
+
+	go func() {
+		if err := a.Start(); err != nil && err != http.ErrServerClosed {
+			slog.Error(err.Error())
+			abortApp <- true
+			abortScheduler <- true
+		}
+	}()
+
+	go func() {
+		if err := s.Start(); err != nil {
+			slog.Error(err.Error())
+			abortScheduler <- true
+		}
+	}()
+
+	select {
+	case <-abortScheduler:
+		s.Stop()
+		slog.Info("scheduler aborted")
+	case <-abortApp:
+		slog.Info("server failed to start")
+	case <-stopApp:
+		s.Stop()
+		slog.Info("scheduler stopped")
+		if err := a.Stop(); err != nil {
+			slog.Error(err.Error())
+			return
+		}
+		slog.Info("server gracefully stopped")
+	}
 }
