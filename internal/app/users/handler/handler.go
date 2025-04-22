@@ -181,7 +181,7 @@ func (h *Handler) paginate(q url.Values, page *model.Page, messages *[]string) {
 	}
 }
 
-func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	userID := r.PathValue("id")
@@ -268,7 +268,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *Handler) DeleteUserByID(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	userID := r.PathValue("id")

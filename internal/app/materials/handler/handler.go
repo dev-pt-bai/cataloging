@@ -370,7 +370,7 @@ func (h *Handler) paginate(q url.Values, page *model.Page, messages *[]string) {
 	}
 }
 
-func (h *Handler) GetMaterialTypeByCode(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetMaterialType(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	mt, err := h.service.GetMaterialTypeByCode(r.Context(), r.PathValue("code"))
@@ -394,7 +394,7 @@ func (h *Handler) GetMaterialTypeByCode(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
-func (h *Handler) GetMaterialUoMByCode(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetMaterialUoM(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	uom, err := h.service.GetMaterialUoMByCode(r.Context(), r.PathValue("code"))
@@ -418,7 +418,7 @@ func (h *Handler) GetMaterialUoMByCode(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handler) GetMaterialGroupByCode(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetMaterialGroup(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	uom, err := h.service.GetMaterialGroupByCode(r.Context(), r.PathValue("code"))
@@ -595,7 +595,7 @@ func (h *Handler) UpdateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *Handler) DeleteMaterialTypeByCode(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteMaterialType(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
@@ -620,7 +620,7 @@ func (h *Handler) DeleteMaterialTypeByCode(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *Handler) DeleteMaterialUoMByCode(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteMaterialUoM(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
@@ -645,7 +645,7 @@ func (h *Handler) DeleteMaterialUoMByCode(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *Handler) DeleteMaterialGroupByCode(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteMaterialGroup(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
