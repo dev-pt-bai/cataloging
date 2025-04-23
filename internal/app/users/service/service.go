@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
@@ -11,10 +12,12 @@ import (
 type Repository interface {
 	CreateUser(ctx context.Context, user model.User) *errors.Error
 	CreateOTP(ctx context.Context, otp model.UserOTP) *errors.Error
+	GetOTP(ctx context.Context, userID string, code string) (*model.UserOTP, *errors.Error)
+	VerifyUser(ctx context.Context, ID string) *errors.Error
 	ListUsers(ctx context.Context, criteria model.ListUsersCriteria) (*model.Users, *errors.Error)
-	GetUserByID(ctx context.Context, ID string) (*model.User, *errors.Error)
+	GetUser(ctx context.Context, ID string) (*model.User, *errors.Error)
 	UpdateUser(ctx context.Context, user model.User) *errors.Error
-	DeleteUserByID(ctx context.Context, ID string) *errors.Error
+	DeleteUser(ctx context.Context, ID string) *errors.Error
 }
 
 type MSGraphClient interface {
@@ -45,7 +48,7 @@ func (s *Service) CreateUser(ctx context.Context, user model.User) *errors.Error
 }
 
 func (s *Service) SendVerificationEmail(ctx context.Context, userID string) *errors.Error {
-	user, err := s.repository.GetUserByID(ctx, userID)
+	user, err := s.repository.GetUser(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -70,12 +73,29 @@ func (s *Service) SendVerificationEmail(ctx context.Context, userID string) *err
 	return nil
 }
 
+func (s *Service) VerifyUser(ctx context.Context, userID string, code string) *errors.Error {
+	otp, err := s.repository.GetOTP(ctx, userID, code)
+	if err != nil {
+		return err
+	}
+
+	if otp.ExpiredAt < time.Now().Unix() {
+		return errors.New(errors.ExpiredOTP)
+	}
+
+	if err := s.repository.VerifyUser(ctx, userID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Service) ListUsers(ctx context.Context, criteria model.ListUsersCriteria) (*model.Users, *errors.Error) {
 	return s.repository.ListUsers(ctx, criteria)
 }
 
 func (s *Service) GetUserByID(ctx context.Context, ID string) (*model.User, *errors.Error) {
-	return s.repository.GetUserByID(ctx, ID)
+	return s.repository.GetUser(ctx, ID)
 }
 
 func (s *Service) UpdateUser(ctx context.Context, user model.User) *errors.Error {
@@ -85,7 +105,7 @@ func (s *Service) UpdateUser(ctx context.Context, user model.User) *errors.Error
 	}
 	user.Password = string(b)
 
-	u, err := s.repository.GetUserByID(ctx, user.ID)
+	u, err := s.repository.GetUser(ctx, user.ID)
 	if err != nil {
 		return err
 	}
@@ -99,5 +119,5 @@ func (s *Service) UpdateUser(ctx context.Context, user model.User) *errors.Error
 }
 
 func (s *Service) DeleteUserByID(ctx context.Context, ID string) *errors.Error {
-	return s.repository.DeleteUserByID(ctx, ID)
+	return s.repository.DeleteUser(ctx, ID)
 }

@@ -22,15 +22,15 @@ type Service interface {
 	ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) (*model.MaterialTypes, *errors.Error)
 	ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) (*model.MaterialUoMs, *errors.Error)
 	ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) (*model.MaterialGroups, *errors.Error)
-	GetMaterialTypeByCode(ctx context.Context, code string) (*model.MaterialType, *errors.Error)
-	GetMaterialUoMByCode(ctx context.Context, code string) (*model.MaterialUoM, *errors.Error)
-	GetMaterialGroupByCode(ctx context.Context, code string) (*model.MaterialGroup, *errors.Error)
+	GetMaterialType(ctx context.Context, code string) (*model.MaterialType, *errors.Error)
+	GetMaterialUoM(ctx context.Context, code string) (*model.MaterialUoM, *errors.Error)
+	GetMaterialGroup(ctx context.Context, code string) (*model.MaterialGroup, *errors.Error)
 	UpdateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error
 	UpdateMaterialUoM(ctx context.Context, uom model.MaterialUoM) *errors.Error
 	UpdateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error
-	DeleteMaterialTypeByCode(ctx context.Context, code string) *errors.Error
-	DeleteMaterialUoMByCode(ctx context.Context, code string) *errors.Error
-	DeleteMaterialGroupByCode(ctx context.Context, code string) *errors.Error
+	DeleteMaterialType(ctx context.Context, code string) *errors.Error
+	DeleteMaterialUoM(ctx context.Context, code string) *errors.Error
+	DeleteMaterialGroup(ctx context.Context, code string) *errors.Error
 }
 
 type Handler struct {
@@ -373,7 +373,7 @@ func (h *Handler) paginate(q url.Values, page *model.Page, messages *[]string) {
 func (h *Handler) GetMaterialType(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
-	mt, err := h.service.GetMaterialTypeByCode(r.Context(), r.PathValue("code"))
+	mt, err := h.service.GetMaterialType(r.Context(), r.PathValue("code"))
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
@@ -397,7 +397,7 @@ func (h *Handler) GetMaterialType(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetMaterialUoM(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
-	uom, err := h.service.GetMaterialUoMByCode(r.Context(), r.PathValue("code"))
+	uom, err := h.service.GetMaterialUoM(r.Context(), r.PathValue("code"))
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
@@ -421,7 +421,7 @@ func (h *Handler) GetMaterialUoM(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetMaterialGroup(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
-	uom, err := h.service.GetMaterialGroupByCode(r.Context(), r.PathValue("code"))
+	uom, err := h.service.GetMaterialGroup(r.Context(), r.PathValue("code"))
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
@@ -608,7 +608,7 @@ func (h *Handler) DeleteMaterialType(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeleteMaterialTypeByCode(r.Context(), r.PathValue("code")); err != nil {
+	if err := h.service.DeleteMaterialType(r.Context(), r.PathValue("code")); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -633,7 +633,7 @@ func (h *Handler) DeleteMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeleteMaterialUoMByCode(r.Context(), r.PathValue("code")); err != nil {
+	if err := h.service.DeleteMaterialUoM(r.Context(), r.PathValue("code")); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -658,7 +658,7 @@ func (h *Handler) DeleteMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeleteMaterialGroupByCode(r.Context(), r.PathValue("code")); err != nil {
+	if err := h.service.DeleteMaterialGroup(r.Context(), r.PathValue("code")); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{

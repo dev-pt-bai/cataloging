@@ -72,6 +72,7 @@ func (a *App) Start() error {
 	mux.HandleFunc("GET /users/{id}", userHandler.GetUser)
 	mux.HandleFunc("PUT /users/{id}", userHandler.UpdateUser)
 	mux.HandleFunc("GET /users/{id}/verify", userHandler.SendVerificationEmail)
+	mux.HandleFunc("POST /users/{id}/verify", userHandler.VerifyUser)
 	mux.HandleFunc("DELETE /users/{id}", userHandler.DeleteUser)
 	mux.HandleFunc("POST /material_types", materialHandler.CreateMaterialType)
 	mux.HandleFunc("GET /material_types", materialHandler.ListMaterialTypes)
