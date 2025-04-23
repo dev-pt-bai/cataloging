@@ -28,6 +28,7 @@ type UserOTP struct {
 	UserID    string `json:"userID"`
 	UserEmail string `json:"userEmail"`
 	OTP       string `json:"otp"`
+	CreatedAt int64  `json:"createdAt"`
 	ExpiredAt int64  `json:"expiredAt"`
 }
 
@@ -183,6 +184,36 @@ func (r UpsertUserRequest) Model() User {
 		Email:    r.Email,
 		Password: r.Password,
 	}
+}
+
+type VerifyUserRequest struct {
+	Code string `json:"code"`
+}
+
+func (r VerifyUserRequest) Validate() error {
+	messages := make([]string, 0, 5)
+
+	if len(r.Code) == 0 {
+		messages = append(messages, "verification code is required")
+	}
+
+	if len(r.Code) < 6 {
+		messages = append(messages, "verification code is too short")
+	}
+
+	if len(r.Code) > 6 {
+		messages = append(messages, "verification code is too long")
+	}
+
+	if match, _ := regexp.MatchString("[^A-Z0-9]", r.Code); match {
+		messages = append(messages, "verification code contains illegal characters")
+	}
+
+	if len(messages) > 0 {
+		return errors.New(strings.Join(messages, ", "))
+	}
+
+	return nil
 }
 
 type ListUsersCriteria struct {

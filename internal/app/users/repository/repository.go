@@ -28,11 +28,20 @@ INSERT INTO user_otps (user_id, user_email, otp, expired_at)
 	SELECT ?, ?, ?, ?
 	WHERE NOT EXISTS(SELECT 1 FROM user_otps WHERE user_id = ? AND expired_at > (UNIX_TIMESTAMP()))`
 
+const GetOTPQuery = `
+SELECT user_id, user_email, otp, created_at, expired_at
+	FROM user_otps
+	WHERE user_id = ? AND otp = ?`
+
+const VerifyUserQuery = `
+UPDATE users SET is_verified = 1, updated_at = ?
+	WHERE id = ? AND deleted_at = 0`
+
 const ListUserQuery = `
 WITH
 	cte1 AS (SELECT JSON_OBJECT('id', id, 'name', name, 'email', email, 'password', password, 'isAdmin', is_admin, 'isVerified', is_verified, 'createdAt', created_at, 'updatedAt', updated_at) AS record FROM users `
 
-const GetUserByIDQuery = `
+const GetUserQuery = `
 SELECT id, name, email, password, is_admin, is_verified, created_at, updated_at
 	FROM users
 	WHERE id = ? AND deleted_at = 0`
@@ -73,6 +82,37 @@ func (r *Repository) CreateOTP(ctx context.Context, otp model.UserOTP) *errors.E
 
 	if row < 1 {
 		return errors.New(errors.UserOTPAlreadyExists)
+	}
+
+	return nil
+}
+
+func (r *Repository) GetOTP(ctx context.Context, userID string, code string) (*model.UserOTP, *errors.Error) {
+	otp := new(model.UserOTP)
+	err := r.db.QueryRowContext(ctx, GetOTPQuery, userID, code).Scan(&otp.UserID, &otp.UserEmail, &otp.OTP, &otp.CreatedAt, &otp.ExpiredAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.New(errors.UserOTPNotFound)
+		}
+		return nil, errors.New(errors.RunQueryFailure).Wrap(err)
+	}
+
+	return otp, nil
+}
+
+func (r *Repository) VerifyUser(ctx context.Context, ID string) *errors.Error {
+	res, err := r.db.ExecContext(ctx, VerifyUserQuery, time.Now().Unix(), ID)
+	if err != nil {
+		return errors.New(errors.RunQueryFailure).Wrap(err)
+	}
+
+	row, err := res.RowsAffected()
+	if err != nil {
+		return errors.New(errors.RowsAffectedFailure).Wrap(err)
+	}
+
+	if row < 1 {
+		return errors.New(errors.UserNotFound)
 	}
 
 	return nil
@@ -183,9 +223,9 @@ func (r *Repository) paginate(page model.Page, param *listParam) *errors.Error {
 	return nil
 }
 
-func (r *Repository) GetUserByID(ctx context.Context, ID string) (*model.User, *errors.Error) {
+func (r *Repository) GetUser(ctx context.Context, ID string) (*model.User, *errors.Error) {
 	user := new(model.User)
-	err := r.db.QueryRowContext(ctx, GetUserByIDQuery, ID).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.IsAdmin, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, GetUserQuery, ID).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.IsAdmin, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.New(errors.UserNotFound)
@@ -214,7 +254,7 @@ func (r *Repository) UpdateUser(ctx context.Context, user model.User) *errors.Er
 	return nil
 }
 
-func (r *Repository) DeleteUserByID(ctx context.Context, ID string) *errors.Error {
+func (r *Repository) DeleteUser(ctx context.Context, ID string) *errors.Error {
 	_, err := r.db.ExecContext(ctx, DeleteUserQuery, time.Now().Unix(), ID)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)

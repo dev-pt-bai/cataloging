@@ -18,6 +18,7 @@ import (
 type Service interface {
 	CreateUser(ctx context.Context, user model.User) *errors.Error
 	SendVerificationEmail(ctx context.Context, userID string) *errors.Error
+	VerifyUser(ctx context.Context, userID string, code string) *errors.Error
 	ListUsers(ctx context.Context, criteria model.ListUsersCriteria) (*model.Users, *errors.Error)
 	GetUserByID(ctx context.Context, ID string) (*model.User, *errors.Error)
 	UpdateUser(ctx context.Context, user model.User) *errors.Error
@@ -105,6 +106,59 @@ func (h *Handler) SendVerificationEmail(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) VerifyUser(w http.ResponseWriter, r *http.Request) {
+	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+
+	userID := r.PathValue("id")
+	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
+	if auth.UserID != userID && !auth.IsAdmin {
+		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.ResourceIsForbidden.String(),
+		})
+		return
+	}
+
+	req := model.VerifyUserRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.JSONDecodeFailure.String(),
+		})
+		return
+	}
+	defer r.Body.Close()
+
+	if err := req.Validate(); err != nil {
+		slog.ErrorContext(r.Context(), errors.New(errors.JSONValidationFailure).Wrap(err).Error(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.JSONValidationFailure.String(),
+		})
+		return
+	}
+
+	if err := h.service.VerifyUser(r.Context(), userID, req.Code); err != nil {
+		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		switch {
+		case err.ContainsCodes(errors.UserOTPNotFound, errors.UserNotFound):
+			w.WriteHeader(http.StatusNotFound)
+		case err.ContainsCodes(errors.ExpiredOTP):
+			w.WriteHeader(http.StatusForbidden)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": err.Code(),
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {

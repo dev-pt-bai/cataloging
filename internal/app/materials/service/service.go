@@ -14,15 +14,15 @@ type Repository interface {
 	ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) (*model.MaterialTypes, *errors.Error)
 	ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) (*model.MaterialUoMs, *errors.Error)
 	ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) (*model.MaterialGroups, *errors.Error)
-	GetMaterialTypeByCode(ctx context.Context, code string) (*model.MaterialType, *errors.Error)
-	GetMaterialUoMByCode(ctx context.Context, code string) (*model.MaterialUoM, *errors.Error)
-	GetMaterialGroupByCode(ctx context.Context, code string) (*model.MaterialGroup, *errors.Error)
+	GetMaterialType(ctx context.Context, code string) (*model.MaterialType, *errors.Error)
+	GetMaterialUoM(ctx context.Context, code string) (*model.MaterialUoM, *errors.Error)
+	GetMaterialGroup(ctx context.Context, code string) (*model.MaterialGroup, *errors.Error)
 	UpdateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error
 	UpdateMaterialUoM(ctx context.Context, uom model.MaterialUoM) *errors.Error
 	UpdateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error
-	DeleteMaterialTypeByCode(ctx context.Context, code string) *errors.Error
-	DeleteMaterialUoMByCode(ctx context.Context, code string) *errors.Error
-	DeleteMaterialGroupByCode(ctx context.Context, code string) *errors.Error
+	DeleteMaterialType(ctx context.Context, code string) *errors.Error
+	DeleteMaterialUoM(ctx context.Context, code string) *errors.Error
+	DeleteMaterialGroup(ctx context.Context, code string) *errors.Error
 }
 
 type Service struct {
@@ -57,16 +57,16 @@ func (s *Service) ListMaterialGroups(ctx context.Context, criteria model.ListMat
 	return s.repository.ListMaterialGroups(ctx, criteria)
 }
 
-func (s *Service) GetMaterialTypeByCode(ctx context.Context, code string) (*model.MaterialType, *errors.Error) {
-	return s.repository.GetMaterialTypeByCode(ctx, code)
+func (s *Service) GetMaterialType(ctx context.Context, code string) (*model.MaterialType, *errors.Error) {
+	return s.repository.GetMaterialType(ctx, code)
 }
 
-func (s *Service) GetMaterialUoMByCode(ctx context.Context, code string) (*model.MaterialUoM, *errors.Error) {
-	return s.repository.GetMaterialUoMByCode(ctx, code)
+func (s *Service) GetMaterialUoM(ctx context.Context, code string) (*model.MaterialUoM, *errors.Error) {
+	return s.repository.GetMaterialUoM(ctx, code)
 }
 
-func (s *Service) GetMaterialGroupByCode(ctx context.Context, code string) (*model.MaterialGroup, *errors.Error) {
-	return s.repository.GetMaterialGroupByCode(ctx, code)
+func (s *Service) GetMaterialGroup(ctx context.Context, code string) (*model.MaterialGroup, *errors.Error) {
+	return s.repository.GetMaterialGroup(ctx, code)
 }
 
 func (s *Service) UpdateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error {
@@ -81,14 +81,14 @@ func (s *Service) UpdateMaterialGroup(ctx context.Context, mg model.MaterialGrou
 	return s.repository.UpdateMaterialGroup(ctx, mg)
 }
 
-func (s *Service) DeleteMaterialTypeByCode(ctx context.Context, code string) *errors.Error {
-	return s.repository.DeleteMaterialTypeByCode(ctx, code)
+func (s *Service) DeleteMaterialType(ctx context.Context, code string) *errors.Error {
+	return s.repository.DeleteMaterialType(ctx, code)
 }
 
-func (s *Service) DeleteMaterialUoMByCode(ctx context.Context, code string) *errors.Error {
-	return s.repository.DeleteMaterialUoMByCode(ctx, code)
+func (s *Service) DeleteMaterialUoM(ctx context.Context, code string) *errors.Error {
+	return s.repository.DeleteMaterialUoM(ctx, code)
 }
 
-func (s *Service) DeleteMaterialGroupByCode(ctx context.Context, code string) *errors.Error {
-	return s.repository.DeleteMaterialGroupByCode(ctx, code)
+func (s *Service) DeleteMaterialGroup(ctx context.Context, code string) *errors.Error {
+	return s.repository.DeleteMaterialGroup(ctx, code)
 }

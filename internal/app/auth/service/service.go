@@ -11,7 +11,7 @@ import (
 )
 
 type Repository interface {
-	GetUserByID(ctx context.Context, ID string) (*model.User, *errors.Error)
+	GetUser(ctx context.Context, ID string) (*model.User, *errors.Error)
 }
 
 type Service struct {
@@ -24,7 +24,7 @@ func New(repository Repository, config *configs.Config) *Service {
 }
 
 func (s *Service) Login(ctx context.Context, user model.User) (*model.Auth, *errors.Error) {
-	u, err := s.repository.GetUserByID(ctx, user.ID)
+	u, err := s.repository.GetUser(ctx, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (s *Service) Login(ctx context.Context, user model.User) (*model.Auth, *err
 }
 
 func (s *Service) RefreshToken(ctx context.Context, userID string) (*model.Auth, *errors.Error) {
-	u, err := s.repository.GetUserByID(ctx, userID)
+	u, err := s.repository.GetUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
