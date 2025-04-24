@@ -139,8 +139,8 @@ func (s *Scheduler) Start() error {
 	}
 
 	interval := time.Hour
-	if config.External.MsGraph.RefreshIntervalSec > 0 {
-		interval = config.External.MsGraph.RefreshIntervalSec * time.Second
+	if config.External.MsGraph.RefreshInterval > 0 {
+		interval = config.External.MsGraph.RefreshInterval * time.Second
 	}
 	s.Ticker = time.NewTicker(interval)
 

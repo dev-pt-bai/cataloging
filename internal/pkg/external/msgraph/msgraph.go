@@ -16,6 +16,8 @@ import (
 	"github.com/dev-pt-bai/cataloging/configs"
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type Client struct {
@@ -93,16 +95,18 @@ func (c *Client) buildGetTokenFromRefreshTokenBody(refreshToken string) (io.Read
 	data := url.Values{}
 	data.Set("refresh_token", refreshToken)
 	data.Set("grant_type", "refresh_token")
+	data.Set("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
 
 	if len(c.config.External.MsGraph.ClientID) == 0 {
 		return nil, fmt.Errorf("missing msgraph client ID")
 	}
 	data.Set("client_id", c.config.External.MsGraph.ClientID)
 
-	if len(c.config.External.MsGraph.ClientSecret) == 0 {
-		return nil, fmt.Errorf("missing msgraph client secret")
+	client_assertion, err := c.generateClientAssertion()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate client assertion: %w", err)
 	}
-	data.Set("client_secret", c.config.External.MsGraph.ClientSecret)
+	data.Set("client_assertion", client_assertion)
 
 	if len(c.config.External.MsGraph.Scopes) == 0 {
 		return nil, fmt.Errorf("missing msgraph scopes")
@@ -156,16 +160,18 @@ func (c *Client) buildGetTokenFromAuthCodeBody(authCode string) (io.Reader, erro
 	data := url.Values{}
 	data.Set("code", authCode)
 	data.Set("grant_type", "authorization_code")
+	data.Set("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
 
 	if len(c.config.External.MsGraph.ClientID) == 0 {
 		return nil, fmt.Errorf("missing msgraph client ID")
 	}
 	data.Set("client_id", c.config.External.MsGraph.ClientID)
 
-	if len(c.config.External.MsGraph.ClientSecret) == 0 {
-		return nil, fmt.Errorf("missing msgraph client secret")
+	client_assertion, err := c.generateClientAssertion()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate client assertion: %w", err)
 	}
-	data.Set("client_secret", c.config.External.MsGraph.ClientSecret)
+	data.Set("client_assertion", client_assertion)
 
 	if len(c.config.External.MsGraph.Scopes) == 0 {
 		return nil, fmt.Errorf("missing msgraph scopes")
@@ -178,6 +184,23 @@ func (c *Client) buildGetTokenFromAuthCodeBody(authCode string) (io.Reader, erro
 	data.Set("redirect_uri", c.config.External.MsGraph.RedirectURI)
 
 	return bytes.NewBufferString(data.Encode()), nil
+}
+
+func (c *Client) generateClientAssertion() (string, error) {
+	now := time.Now()
+
+	assertion := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
+		"aud": c.urlGetToken,
+		"iss": c.config.External.MsGraph.ClientID,
+		"sub": c.config.External.MsGraph.ClientID,
+		"jti": uuid.NewString(),
+		"nbf": now.Unix(),
+		"exp": now.Add(5 * time.Minute).Unix(),
+	})
+
+	assertion.Header["x5t"] = c.config.External.MsGraph.EncodedThumbprint
+
+	return assertion.SignedString(c.config.External.MsGraph.PrivateKey)
 }
 
 func (c *Client) Token(ctx context.Context) (string, *errors.Error) {
