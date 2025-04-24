@@ -15,14 +15,13 @@
         "msGraph": {
             "tenantID": "yourMSGraphAPITenantID",
             "clientID": "yourMSGraphAPIClientID",
-            "clientSecret": "yourMSGraphAPIClientSecret",
             "redirectURI": "yourMSGraphAPIRedirectURI"
             "scopes": [
                 "files.readwrite",
                 "mail.send",
                 "offline_access"
             ],
-            "refreshIntervalSec": 3600
+            "refreshInterval": 3600
         }
     }
 }
