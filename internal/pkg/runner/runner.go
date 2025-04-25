@@ -148,7 +148,9 @@ func (s *Scheduler) Start() error {
 
 	for {
 		<-s.Ticker.C
-		msgraph.AutoRefreshToken(config)
+		if err := msgraph.AutoRefreshToken(config); err != nil {
+			slog.Error(fmt.Sprintf("refreshing token failure: %v", err))
+		}
 	}
 }
 
@@ -170,7 +172,7 @@ func Run() {
 
 	go func() {
 		if err := a.Start(); err != nil && err != http.ErrServerClosed {
-			slog.Error(err.Error())
+			slog.Error(fmt.Sprintf("starting app failure: %v", err))
 			abortApp <- true
 			abortScheduler <- true
 		}
@@ -178,7 +180,7 @@ func Run() {
 
 	go func() {
 		if err := s.Start(); err != nil {
-			slog.Error(err.Error())
+			slog.Error(fmt.Sprintf("starting scheduler failure: %v", err))
 			abortScheduler <- true
 		}
 	}()
@@ -193,7 +195,7 @@ func Run() {
 		s.Stop()
 		slog.Info("scheduler stopped")
 		if err := a.Stop(); err != nil {
-			slog.Error(err.Error())
+			slog.Error(fmt.Sprintf("stopping app failure: %v", err))
 			return
 		}
 		slog.Info("server gracefully stopped")

@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/dev-pt-bai/cataloging/configs"
 	"github.com/dev-pt-bai/cataloging/internal/app/middleware"
@@ -75,10 +74,10 @@ func (h *Handler) buildAuthCodeURL() (string, error) {
 	}
 	q.Set("redirect_uri", h.config.External.MsGraph.RedirectURI)
 
-	if len(h.config.External.MsGraph.Scopes) == 0 {
+	if len(h.config.External.MsGraph.Scope) == 0 {
 		return "", fmt.Errorf("missing msgraph scopes")
 	}
-	q.Set("scope", strings.Join(h.config.External.MsGraph.Scopes, " "))
+	q.Set("scope", h.config.External.MsGraph.Scope)
 
 	u.RawQuery = q.Encode()
 

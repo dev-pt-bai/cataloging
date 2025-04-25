@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
 	"time"
 
@@ -47,16 +46,16 @@ func AutoRefreshToken(config *configs.Config) *errors.Error {
 		return nil
 	}
 
-	return client.getTokenFromRefreshToken(context.Background())
-}
-
-func (c *Client) getTokenFromRefreshToken(ctx context.Context) *errors.Error {
-	if len(c.token.RefreshToken) == 0 {
+	if len(client.token.AccessToken) == 0 {
 		return errors.New(errors.InvalidMSGraphToken)
 	}
-	slog.InfoContext(ctx, "refreshing ms graph token")
+	slog.Info("refreshing ms graph token")
 
-	body, err := c.buildGetTokenFromRefreshTokenBody(c.token.RefreshToken)
+	return client.refreshToken(context.Background())
+}
+
+func (c *Client) refreshToken(ctx context.Context) *errors.Error {
+	body, err := c.buildRefreshTokenBody()
 	if err != nil {
 		return errors.New(errors.MissingMSGraphParameter).Wrap(err)
 	}
@@ -91,10 +90,9 @@ func (c *Client) getTokenFromRefreshToken(ctx context.Context) *errors.Error {
 	return nil
 }
 
-func (c *Client) buildGetTokenFromRefreshTokenBody(refreshToken string) (io.Reader, error) {
+func (c *Client) buildRefreshTokenBody() (io.Reader, error) {
 	data := url.Values{}
-	data.Set("refresh_token", refreshToken)
-	data.Set("grant_type", "refresh_token")
+	data.Set("grant_type", "client_credentials")
 	data.Set("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
 
 	if len(c.config.External.MsGraph.ClientID) == 0 {
@@ -108,10 +106,10 @@ func (c *Client) buildGetTokenFromRefreshTokenBody(refreshToken string) (io.Read
 	}
 	data.Set("client_assertion", client_assertion)
 
-	if len(c.config.External.MsGraph.Scopes) == 0 {
+	if len(c.config.External.MsGraph.Scope) == 0 {
 		return nil, fmt.Errorf("missing msgraph scopes")
 	}
-	data.Set("scope", strings.Join(c.config.External.MsGraph.Scopes, " "))
+	data.Set("scope", c.config.External.MsGraph.Scope)
 
 	return bytes.NewBufferString(data.Encode()), nil
 }
@@ -173,10 +171,10 @@ func (c *Client) buildGetTokenFromAuthCodeBody(authCode string) (io.Reader, erro
 	}
 	data.Set("client_assertion", client_assertion)
 
-	if len(c.config.External.MsGraph.Scopes) == 0 {
+	if len(c.config.External.MsGraph.Scope) == 0 {
 		return nil, fmt.Errorf("missing msgraph scopes")
 	}
-	data.Set("scope", strings.Join(c.config.External.MsGraph.Scopes, " "))
+	data.Set("scope", c.config.External.MsGraph.Scope)
 
 	if len(c.config.External.MsGraph.RedirectURI) == 0 {
 		return nil, fmt.Errorf("missing msgraph redirect URI")
@@ -187,15 +185,15 @@ func (c *Client) buildGetTokenFromAuthCodeBody(authCode string) (io.Reader, erro
 }
 
 func (c *Client) generateClientAssertion() (string, error) {
-	now := time.Now()
+	now := time.Now().Unix()
 
 	assertion := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"aud": c.urlGetToken,
 		"iss": c.config.External.MsGraph.ClientID,
 		"sub": c.config.External.MsGraph.ClientID,
 		"jti": uuid.NewString(),
-		"nbf": now.Unix(),
-		"exp": now.Add(5 * time.Minute).Unix(),
+		"nbf": now,
+		"exp": now + 300,
 	})
 
 	assertion.Header["x5t"] = c.config.External.MsGraph.EncodedThumbprint
@@ -212,7 +210,7 @@ func (c *Client) Token(ctx context.Context) (string, *errors.Error) {
 		return c.token.AccessToken, nil
 	}
 
-	if err := c.getTokenFromRefreshToken(ctx); err != nil {
+	if err := c.refreshToken(ctx); err != nil {
 		return "", err
 	}
 
@@ -234,12 +232,7 @@ func (c *Client) SendEmail(ctx context.Context, email model.Email) *errors.Error
 		return errors.New(errors.CreatingHTTPRequestFailure).Wrap(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-
-	token, errToken := c.Token(ctx)
-	if errToken != nil {
-		return errToken
-	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token.AccessToken))
 
 	res, err := c.client.Do(req)
 	if err != nil {

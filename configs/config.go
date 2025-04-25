@@ -14,8 +14,8 @@ import (
 )
 
 type App struct {
-	Port            uint16        `json:"port"`
-	TokenExpiryHour time.Duration `json:"tokenExpiryHour"`
+	Port        uint16        `json:"port"`
+	TokenExpiry time.Duration `json:"tokenExpiry"`
 }
 
 type Secret struct {
@@ -36,7 +36,7 @@ type MsGraph struct {
 	TenantID          string          `json:"tenantID"`
 	ClientID          string          `json:"clientID"`
 	RedirectURI       string          `json:"redirectURI"`
-	Scopes            []string        `json:"scopes"`
+	Scope             string          `json:"scope"`
 	RefreshInterval   time.Duration   `json:"refreshInterval"`
 	PrivateKey        *rsa.PrivateKey `json:"-"`
 	EncodedThumbprint string          `json:"-"`

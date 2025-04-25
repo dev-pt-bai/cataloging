@@ -12,10 +12,10 @@ import (
 func GenerateToken(userID string, isAdmin model.Flag, config *configs.Config) (*model.Auth, *errors.Error) {
 	accessExpiredAt := time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC).Unix()
 	refreshExpiredAt := accessExpiredAt
-	if config.App.TokenExpiryHour > 0 {
+	if config.App.TokenExpiry > 0 {
 		now := time.Now()
-		accessExpiredAt = now.Add(time.Hour * config.App.TokenExpiryHour).Unix()
-		refreshExpiredAt = now.Add(10 * time.Hour * config.App.TokenExpiryHour).Unix()
+		accessExpiredAt = now.Add(time.Hour * config.App.TokenExpiry).Unix()
+		refreshExpiredAt = now.Add(10 * time.Hour * config.App.TokenExpiry).Unix()
 	}
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, (model.Auth{
@@ -50,8 +50,8 @@ func GenerateToken(userID string, isAdmin model.Flag, config *configs.Config) (*
 
 func GenerateAccessToken(userID string, isAdmin model.Flag, config *configs.Config) (*model.Auth, *errors.Error) {
 	accessExpiredAt := time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC).Unix()
-	if config.App.TokenExpiryHour > 0 {
-		accessExpiredAt = time.Now().Add(time.Hour * config.App.TokenExpiryHour).Unix()
+	if config.App.TokenExpiry > 0 {
+		accessExpiredAt = time.Now().Add(time.Hour * config.App.TokenExpiry).Unix()
 	}
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, (model.Auth{
