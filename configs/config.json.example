@@ -1,7 +1,7 @@
 {
     "app": {
         "port": 8080,
-        "tokenExpiryHour": 0
+        "tokenExpiry": 0
     },
     "secret": {
         "jwt": "yourJWTSecret"
@@ -16,11 +16,7 @@
             "tenantID": "yourMSGraphAPITenantID",
             "clientID": "yourMSGraphAPIClientID",
             "redirectURI": "yourMSGraphAPIRedirectURI"
-            "scopes": [
-                "files.readwrite",
-                "mail.send",
-                "offline_access"
-            ],
+            "scopes": "https://graph.microsoft.com/.default",
             "refreshInterval": 3600
         }
     }
