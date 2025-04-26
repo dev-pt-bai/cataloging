@@ -3,12 +3,16 @@ package msgraph
 import (
 	"bytes"
 	"context"
+	"crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
+	"mime"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -20,34 +24,74 @@ import (
 )
 
 type Client struct {
-	mu           sync.Mutex
-	urlGetToken  string
-	urlSendEmail string
-	token        *model.MSGraphAuth
-	config       *configs.Config
-	client       *http.Client
+	mu                sync.Mutex
+	clientID          string
+	scope             string
+	redirectURI       string
+	encodedThumbprint string
+	privateKey        *rsa.PrivateKey
+	urlGetToken       string
+	urlSendEmail      string
+	urlUploadFile     string
+	token             *model.MSGraphAuth
+	client            *http.Client
 }
 
 var client *Client
 
-func NewClient(config *configs.Config) *Client {
-	client = &Client{
-		urlGetToken:  fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", config.External.MsGraph.TenantID),
-		urlSendEmail: "https://graph.microsoft.com/v1.0/me/sendMail",
-		config:       config,
-		client:       http.DefaultClient,
+func NewClient(config *configs.Config) (*Client, error) {
+	c := new(Client)
+	c.client = http.DefaultClient
+	c.urlSendEmail = "https://graph.microsoft.com/v1.0/me/sendMail"
+
+	if config == nil {
+		return nil, fmt.Errorf("missing config")
 	}
 
-	return client
+	if len(config.External.MsGraph.ClientID) == 0 {
+		return nil, fmt.Errorf("missing msgraph client ID")
+	}
+	c.clientID = config.External.MsGraph.ClientID
+
+	if len(config.External.MsGraph.Scope) == 0 {
+		return nil, fmt.Errorf("missing msgraph scope")
+	}
+	c.scope = config.External.MsGraph.Scope
+
+	if len(config.External.MsGraph.RedirectURI) == 0 {
+		return nil, fmt.Errorf("missing msgraph redirect URI")
+	}
+	c.redirectURI = config.External.MsGraph.RedirectURI
+
+	if len(config.External.MsGraph.EncodedThumbprint) == 0 {
+		return nil, fmt.Errorf("missing msgraph encoded thumbprint")
+	}
+	c.encodedThumbprint = config.External.MsGraph.EncodedThumbprint
+
+	if config.External.MsGraph.PrivateKey == nil {
+		return nil, fmt.Errorf("missing msgraph private key")
+	}
+	c.privateKey = config.External.MsGraph.PrivateKey
+
+	if len(config.External.MsGraph.TenantID) == 0 {
+		return nil, fmt.Errorf("missing msgraph tenant ID")
+	}
+	c.urlGetToken = fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", config.External.MsGraph.TenantID)
+
+	if len(config.External.MsGraph.DirectoryName) == 0 {
+		return nil, fmt.Errorf("missing msgraph directory name")
+	}
+	c.urlUploadFile = fmt.Sprintf("https://graph.microsoft.com/v1.0/me/drive/root:/%s", config.External.MsGraph.DirectoryName)
+
+	client = c
+
+	return client, nil
 }
 
 func AutoRefreshToken(config *configs.Config) *errors.Error {
-	if client == nil || client.token == nil {
+	if client == nil || client.token == nil || len(client.token.AccessToken) == 0 {
+		slog.Warn("skipping refresh token: please peform delegated authentication first")
 		return nil
-	}
-
-	if len(client.token.AccessToken) == 0 {
-		return errors.New(errors.InvalidMSGraphToken)
 	}
 	slog.Info("refreshing ms graph token")
 
@@ -62,7 +106,7 @@ func (c *Client) refreshToken(ctx context.Context) *errors.Error {
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.urlGetToken, body)
 	if err != nil {
-		return errors.New(errors.CreatingHTTPRequestFailure).Wrap(err)
+		return errors.New(errors.CreateHTTPRequestFailure).Wrap(err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
@@ -94,22 +138,14 @@ func (c *Client) buildRefreshTokenBody() (io.Reader, error) {
 	data := url.Values{}
 	data.Set("grant_type", "client_credentials")
 	data.Set("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
-
-	if len(c.config.External.MsGraph.ClientID) == 0 {
-		return nil, fmt.Errorf("missing msgraph client ID")
-	}
-	data.Set("client_id", c.config.External.MsGraph.ClientID)
+	data.Set("client_id", c.clientID)
+	data.Set("scope", c.scope)
 
 	client_assertion, err := c.generateClientAssertion()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate client assertion: %w", err)
 	}
 	data.Set("client_assertion", client_assertion)
-
-	if len(c.config.External.MsGraph.Scope) == 0 {
-		return nil, fmt.Errorf("missing msgraph scopes")
-	}
-	data.Set("scope", c.config.External.MsGraph.Scope)
 
 	return bytes.NewBufferString(data.Encode()), nil
 }
@@ -126,7 +162,7 @@ func (c *Client) GetTokenFromAuthCode(ctx context.Context, authCode string) *err
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.urlGetToken, body)
 	if err != nil {
-		return errors.New(errors.CreatingHTTPRequestFailure).Wrap(err)
+		return errors.New(errors.CreateHTTPRequestFailure).Wrap(err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
@@ -159,11 +195,8 @@ func (c *Client) buildGetTokenFromAuthCodeBody(authCode string) (io.Reader, erro
 	data.Set("code", authCode)
 	data.Set("grant_type", "authorization_code")
 	data.Set("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
-
-	if len(c.config.External.MsGraph.ClientID) == 0 {
-		return nil, fmt.Errorf("missing msgraph client ID")
-	}
-	data.Set("client_id", c.config.External.MsGraph.ClientID)
+	data.Set("client_id", c.clientID)
+	data.Set("scope", c.scope)
 
 	client_assertion, err := c.generateClientAssertion()
 	if err != nil {
@@ -171,15 +204,7 @@ func (c *Client) buildGetTokenFromAuthCodeBody(authCode string) (io.Reader, erro
 	}
 	data.Set("client_assertion", client_assertion)
 
-	if len(c.config.External.MsGraph.Scope) == 0 {
-		return nil, fmt.Errorf("missing msgraph scopes")
-	}
-	data.Set("scope", c.config.External.MsGraph.Scope)
-
-	if len(c.config.External.MsGraph.RedirectURI) == 0 {
-		return nil, fmt.Errorf("missing msgraph redirect URI")
-	}
-	data.Set("redirect_uri", c.config.External.MsGraph.RedirectURI)
+	data.Set("redirect_uri", c.redirectURI)
 
 	return bytes.NewBufferString(data.Encode()), nil
 }
@@ -189,16 +214,16 @@ func (c *Client) generateClientAssertion() (string, error) {
 
 	assertion := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"aud": c.urlGetToken,
-		"iss": c.config.External.MsGraph.ClientID,
-		"sub": c.config.External.MsGraph.ClientID,
+		"iss": c.clientID,
+		"sub": c.clientID,
 		"jti": uuid.NewString(),
 		"nbf": now,
 		"exp": now + 300,
 	})
 
-	assertion.Header["x5t"] = c.config.External.MsGraph.EncodedThumbprint
+	assertion.Header["x5t"] = c.encodedThumbprint
 
-	return assertion.SignedString(c.config.External.MsGraph.PrivateKey)
+	return assertion.SignedString(c.privateKey)
 }
 
 func (c *Client) Token(ctx context.Context) (string, *errors.Error) {
@@ -218,6 +243,10 @@ func (c *Client) Token(ctx context.Context) (string, *errors.Error) {
 }
 
 func (c *Client) SendEmail(ctx context.Context, email model.Email) *errors.Error {
+	if c.token == nil {
+		return errors.New(errors.InvalidMSGraphToken)
+	}
+
 	if err := email.Validate(); err != nil {
 		return errors.New(errors.JSONValidationFailure).Wrap(err)
 	}
@@ -229,7 +258,7 @@ func (c *Client) SendEmail(ctx context.Context, email model.Email) *errors.Error
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.urlSendEmail, body)
 	if err != nil {
-		return errors.New(errors.CreatingHTTPRequestFailure).Wrap(err)
+		return errors.New(errors.CreateHTTPRequestFailure).Wrap(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token.AccessToken))
@@ -241,8 +270,63 @@ func (c *Client) SendEmail(ctx context.Context, email model.Email) *errors.Error
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusAccepted {
-		return errors.New(errors.SendEmailFailure)
+		r := new(model.MSGraphSendEmail)
+		if err := json.NewDecoder(res.Body).Decode(r); err != nil {
+			return errors.New(errors.JSONDecodeFailure).Wrap(err)
+		}
+		return errors.New(errors.SendEmailFailure).Wrap(r.Error)
 	}
 
 	return nil
+}
+
+func (c *Client) UploadFile(ctx context.Context, file multipart.File, header *multipart.FileHeader) (*model.MSGraphUploadFile, *errors.Error) {
+	if c.token == nil {
+		return nil, errors.New(errors.InvalidMSGraphToken)
+	}
+
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+
+	part, err := writer.CreateFormFile("file", header.Filename)
+	if err != nil {
+		return nil, errors.New(errors.CreateFormFileFailure).Wrap(err)
+	}
+
+	_, err = io.Copy(part, file)
+	if err != nil {
+		return nil, errors.New(errors.CopyFileFailure).Wrap(err)
+	}
+	writer.Close()
+
+	ext := filepath.Ext(header.Filename)
+	url := fmt.Sprintf("%s/%s%s:/content", c.urlUploadFile, uuid.NewString(), ext)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, body)
+	if err != nil {
+		return nil, errors.New(errors.CreateHTTPRequestFailure).Wrap(err)
+	}
+
+	contentType := "application/octet-stream"
+	if mimeType := mime.TypeByExtension(ext); len(mimeType) != 0 {
+		contentType = mimeType
+	}
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token.AccessToken))
+
+	res, err := c.client.Do(req)
+	if err != nil {
+		return nil, errors.New(errors.SendHTTPRequestFailure).Wrap(err)
+	}
+	defer res.Body.Close()
+
+	f := new(model.MSGraphUploadFile)
+	if err := json.NewDecoder(res.Body).Decode(f); err != nil {
+		return nil, errors.New(errors.JSONDecodeFailure).Wrap(err)
+	}
+
+	if res.StatusCode != http.StatusCreated || f.Error != nil {
+		return nil, errors.New(errors.UploadFileFailure).Wrap(f.Error)
+	}
+
+	return f, nil
 }

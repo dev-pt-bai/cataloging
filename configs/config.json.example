@@ -17,7 +17,15 @@
             "clientID": "yourMSGraphAPIClientID",
             "redirectURI": "yourMSGraphAPIRedirectURI"
             "scopes": "https://graph.microsoft.com/.default",
-            "refreshInterval": 3600
+            "directoryName": "yourOnedriveDirectoryName",
+            "maxFileSize": 0,
+            "supportedFileExt": [
+                ".pdf",
+                ".jpg",
+                ".jpeg",
+                ".png"
+            ],
+            "refreshInterval": 0
         }
     }
 }

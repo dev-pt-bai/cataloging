@@ -54,8 +54,8 @@ func (h *Handler) CreateMaterialType(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := model.UpsertMaterialTypeRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	req := new(model.UpsertMaterialTypeRequest)
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -104,8 +104,8 @@ func (h *Handler) CreateMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := model.UpsertMaterialUoMRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	req := new(model.UpsertMaterialUoMRequest)
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -154,8 +154,8 @@ func (h *Handler) CreateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := model.UpsertMaterialGroupRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	req := new(model.UpsertMaterialGroupRequest)
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -455,8 +455,8 @@ func (h *Handler) UpdateMaterialType(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := model.UpsertMaterialTypeRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	req := new(model.UpsertMaterialTypeRequest)
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -506,8 +506,8 @@ func (h *Handler) UpdateMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := model.UpsertMaterialUoMRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	req := new(model.UpsertMaterialUoMRequest)
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -557,8 +557,8 @@ func (h *Handler) UpdateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := model.UpsertMaterialGroupRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	req := new(model.UpsertMaterialGroupRequest)
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{

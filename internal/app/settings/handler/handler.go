@@ -16,7 +16,10 @@ import (
 )
 
 type Handler struct {
-	config        *configs.Config
+	urlAuthCode   string
+	clientID      string
+	redirectURI   string
+	scope         string
 	msGraphClient MSGraphClient
 }
 
@@ -24,8 +27,35 @@ type MSGraphClient interface {
 	GetTokenFromAuthCode(ctx context.Context, authCode string) *errors.Error
 }
 
-func New(config *configs.Config, msGraphClient MSGraphClient) *Handler {
-	return &Handler{config: config, msGraphClient: msGraphClient}
+func New(config *configs.Config, msGraphClient MSGraphClient) (*Handler, error) {
+	h := new(Handler)
+	h.msGraphClient = msGraphClient
+
+	if config == nil {
+		return nil, fmt.Errorf("missing config")
+	}
+
+	if len(config.External.MsGraph.TenantID) == 0 {
+		return nil, fmt.Errorf("missing msgraph tenant ID")
+	}
+	h.urlAuthCode = fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/authorize", config.External.MsGraph.TenantID)
+
+	if len(config.External.MsGraph.ClientID) == 0 {
+		return nil, fmt.Errorf("missing msgraph client ID")
+	}
+	h.clientID = config.External.MsGraph.ClientID
+
+	if len(config.External.MsGraph.RedirectURI) == 0 {
+		return nil, fmt.Errorf("missing msgraph redirect URI")
+	}
+	h.redirectURI = config.External.MsGraph.RedirectURI
+
+	if len(config.External.MsGraph.Scope) == 0 {
+		return nil, fmt.Errorf("missing msgraph scopes")
+	}
+	h.scope = config.External.MsGraph.Scope
+
+	return h, nil
 }
 
 func (h *Handler) GetMSGraphAuthCode(w http.ResponseWriter, r *http.Request) {
@@ -58,26 +88,14 @@ func (h *Handler) GetMSGraphAuthCode(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) buildAuthCodeURL() (string, error) {
-	u, _ := url.Parse(fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/authorize", h.config.External.MsGraph.TenantID))
+	u, _ := url.Parse(h.urlAuthCode)
 	q := u.Query()
 	q.Set("response_type", "code")
 	q.Set("response_mode", "query")
 	q.Set("state", uuid.NewString())
-
-	if len(h.config.External.MsGraph.ClientID) == 0 {
-		return "", fmt.Errorf("missing msgraph client ID")
-	}
-	q.Set("client_id", h.config.External.MsGraph.ClientID)
-
-	if len(h.config.External.MsGraph.RedirectURI) == 0 {
-		return "", fmt.Errorf("missing msgraph redirect URI")
-	}
-	q.Set("redirect_uri", h.config.External.MsGraph.RedirectURI)
-
-	if len(h.config.External.MsGraph.Scope) == 0 {
-		return "", fmt.Errorf("missing msgraph scopes")
-	}
-	q.Set("scope", h.config.External.MsGraph.Scope)
+	q.Set("client_id", h.clientID)
+	q.Set("redirect_uri", h.redirectURI)
+	q.Set("scope", h.scope)
 
 	u.RawQuery = q.Encode()
 

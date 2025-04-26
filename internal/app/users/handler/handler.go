@@ -36,8 +36,8 @@ func New(service Service) *Handler {
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
-	req := model.UpsertUserRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	req := new(model.UpsertUserRequest)
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -122,8 +122,8 @@ func (h *Handler) VerifyUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := model.VerifyUserRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	req := new(model.VerifyUserRequest)
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -329,8 +329,8 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := model.UpsertUserRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	req := new(model.UpsertUserRequest)
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{

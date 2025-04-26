@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/dev-pt-bai/cataloging/configs"
 	"github.com/dev-pt-bai/cataloging/internal/model"
@@ -15,12 +17,26 @@ type Repository interface {
 }
 
 type Service struct {
-	repository Repository
-	config     *configs.Config
+	repository  Repository
+	tokenExpiry time.Duration
+	secretJWT   string
 }
 
-func New(repository Repository, config *configs.Config) *Service {
-	return &Service{repository: repository, config: config}
+func New(repository Repository, config *configs.Config) (*Service, error) {
+	s := new(Service)
+	s.repository = repository
+
+	if config == nil {
+		return nil, fmt.Errorf("missing config")
+	}
+	s.tokenExpiry = config.App.TokenExpiry
+
+	if len(config.Secret.JWT) == 0 {
+		return nil, fmt.Errorf("missing JWT secret")
+	}
+	s.secretJWT = config.Secret.JWT
+
+	return s, nil
 }
 
 func (s *Service) Login(ctx context.Context, user model.User) (*model.Auth, *errors.Error) {
@@ -33,7 +49,7 @@ func (s *Service) Login(ctx context.Context, user model.User) (*model.Auth, *err
 		return nil, errors.New(errors.UserPasswordMismatch).Wrap(err)
 	}
 
-	auth, err := auth.GenerateToken(u.ID, u.IsAdmin, s.config)
+	auth, err := auth.GenerateToken(u.ID, u.IsAdmin, s.tokenExpiry, s.secretJWT)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +63,7 @@ func (s *Service) RefreshToken(ctx context.Context, userID string) (*model.Auth,
 		return nil, err
 	}
 
-	newAuth, err := auth.GenerateAccessToken(u.ID, u.IsAdmin, s.config)
+	newAuth, err := auth.GenerateAccessToken(u.ID, u.IsAdmin, s.tokenExpiry, s.secretJWT)
 	if err != nil {
 		return nil, err
 	}

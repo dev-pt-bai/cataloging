@@ -37,6 +37,9 @@ type MsGraph struct {
 	ClientID          string          `json:"clientID"`
 	RedirectURI       string          `json:"redirectURI"`
 	Scope             string          `json:"scope"`
+	DirectoryName     string          `json:"directoryName"`
+	MaxFileSize       int64           `json:"maxFileSize"`
+	SupportedFileExt  []string        `json:"supportedFileExt"`
 	RefreshInterval   time.Duration   `json:"refreshInterval"`
 	PrivateKey        *rsa.PrivateKey `json:"-"`
 	EncodedThumbprint string          `json:"-"`
