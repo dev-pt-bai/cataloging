@@ -19,6 +19,31 @@ type MSGraphAuth struct {
 	ErrorCodes       []int64 `json:"error_codes"`
 }
 
+type MSGraphSendEmail struct {
+	Error *MSGraphError `json:"error"`
+}
+
+type MSGraphUploadFile struct {
+	URLDownload string        `json:"@microsoft.graph.downloadUrl"`
+	ID          string        `json:"id"`
+	Name        string        `json:"name"`
+	Size        int64         `json:"size"`
+	URLWeb      string        `json:"webUrl"`
+	Error       *MSGraphError `json:"error"`
+}
+
+type MSGraphError struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (e *MSGraphError) Error() string {
+	if e == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("code: %v, message: %v", e.Code, e.Message)
+}
+
 type Body struct {
 	ContentType string `json:"contentType"`
 	Content     string `json:"content"`

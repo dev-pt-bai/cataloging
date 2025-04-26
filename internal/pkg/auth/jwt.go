@@ -3,19 +3,18 @@ package auth
 import (
 	"time"
 
-	"github.com/dev-pt-bai/cataloging/configs"
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateToken(userID string, isAdmin model.Flag, config *configs.Config) (*model.Auth, *errors.Error) {
+func GenerateToken(userID string, isAdmin model.Flag, tokenExpiry time.Duration, secret string) (*model.Auth, *errors.Error) {
 	accessExpiredAt := time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC).Unix()
 	refreshExpiredAt := accessExpiredAt
-	if config.App.TokenExpiry > 0 {
+	if tokenExpiry > 0 {
 		now := time.Now()
-		accessExpiredAt = now.Add(time.Hour * config.App.TokenExpiry).Unix()
-		refreshExpiredAt = now.Add(10 * time.Hour * config.App.TokenExpiry).Unix()
+		accessExpiredAt = now.Add(time.Hour * tokenExpiry).Unix()
+		refreshExpiredAt = now.Add(10 * time.Hour * tokenExpiry).Unix()
 	}
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, (model.Auth{
@@ -24,7 +23,7 @@ func GenerateToken(userID string, isAdmin model.Flag, config *configs.Config) (*
 		ExpiredAt: accessExpiredAt,
 	}).MapClaims(false))
 
-	signedAccessToken, err := accessToken.SignedString([]byte(config.Secret.JWT))
+	signedAccessToken, err := accessToken.SignedString([]byte(secret))
 	if err != nil {
 		return nil, errors.New(errors.SigningJWTFailure).Wrap(err)
 	}
@@ -34,7 +33,7 @@ func GenerateToken(userID string, isAdmin model.Flag, config *configs.Config) (*
 		ExpiredAt: refreshExpiredAt,
 	}).MapClaims(true))
 
-	signedRefreshToken, err := refreshToken.SignedString([]byte(config.Secret.JWT))
+	signedRefreshToken, err := refreshToken.SignedString([]byte(secret))
 	if err != nil {
 		return nil, errors.New(errors.SigningJWTFailure).Wrap(err)
 	}
@@ -48,10 +47,10 @@ func GenerateToken(userID string, isAdmin model.Flag, config *configs.Config) (*
 	return &a, nil
 }
 
-func GenerateAccessToken(userID string, isAdmin model.Flag, config *configs.Config) (*model.Auth, *errors.Error) {
+func GenerateAccessToken(userID string, isAdmin model.Flag, tokenExpiry time.Duration, secret string) (*model.Auth, *errors.Error) {
 	accessExpiredAt := time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC).Unix()
-	if config.App.TokenExpiry > 0 {
-		accessExpiredAt = time.Now().Add(time.Hour * config.App.TokenExpiry).Unix()
+	if tokenExpiry > 0 {
+		accessExpiredAt = time.Now().Add(time.Hour * tokenExpiry).Unix()
 	}
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, (model.Auth{
@@ -60,7 +59,7 @@ func GenerateAccessToken(userID string, isAdmin model.Flag, config *configs.Conf
 		ExpiredAt: accessExpiredAt,
 	}).MapClaims(false))
 
-	signedAccessToken, err := accessToken.SignedString([]byte(config.Secret.JWT))
+	signedAccessToken, err := accessToken.SignedString([]byte(secret))
 	if err != nil {
 		return nil, errors.New(errors.SigningJWTFailure).Wrap(err)
 	}
@@ -73,14 +72,14 @@ func GenerateAccessToken(userID string, isAdmin model.Flag, config *configs.Conf
 	return &a, nil
 }
 
-func ParseToken(token string, config *configs.Config) (*model.Auth, *errors.Error) {
+func ParseToken(token string, secret string) (*model.Auth, *errors.Error) {
 	t, err := jwt.Parse(token, func(t *jwt.Token) (any, error) {
 		method, ok := t.Method.(*jwt.SigningMethodHMAC)
 		if !ok || method != jwt.SigningMethodHS256 {
 			return nil, errors.New(errors.InvalidJWTSigningMethod)
 		}
 
-		return []byte(config.Secret.JWT), nil
+		return []byte(secret), nil
 	})
 	if err != nil {
 		return nil, errors.New(errors.ParseTokenFailure).Wrap(err)

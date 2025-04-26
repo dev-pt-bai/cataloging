@@ -83,7 +83,16 @@ func Authenticator(next http.Handler, config *configs.Config) http.Handler {
 		}
 		token := headerElements[1]
 
-		claims, err := auth.ParseToken(token, config)
+		if config == nil || len(config.Secret.JWT) == 0 {
+			slog.ErrorContext(r.Context(), errors.UndefinedJWTSecret.String(), slog.String("requestID", requestID))
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{
+				"errorCode": errors.UndefinedJWTSecret.String(),
+			})
+			return
+		}
+
+		claims, err := auth.ParseToken(token, config.Secret.JWT)
 		if err != nil {
 			slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 			w.WriteHeader(http.StatusUnauthorized)

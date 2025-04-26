@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/dev-pt-bai/cataloging/configs"
+	ashandler "github.com/dev-pt-bai/cataloging/internal/app/assets/handler"
+	asservice "github.com/dev-pt-bai/cataloging/internal/app/assets/service"
 	ahandler "github.com/dev-pt-bai/cataloging/internal/app/auth/handler"
 	aservice "github.com/dev-pt-bai/cataloging/internal/app/auth/service"
 	mhandler "github.com/dev-pt-bai/cataloging/internal/app/materials/handler"
@@ -44,25 +46,44 @@ func (a *App) Start() error {
 		return fmt.Errorf("failed to create database client: %w", err)
 	}
 
-	msGraphClient := msgraph.NewClient(config)
+	msGraphClient, err := msgraph.NewClient(config)
+	if err != nil {
+		return fmt.Errorf("failed to instantiate msgraph client: %w", err)
+	}
 
 	pingHandler := phandler.New()
 
-	settingHandler := shandler.New(config, msGraphClient)
+	settingHandler, err := shandler.New(config, msGraphClient)
+	if err != nil {
+		return fmt.Errorf("failed to instantiate setting handler: %w", err)
+	}
 
 	userRepository := urepository.New(db)
 	userService := uservice.New(userRepository, msGraphClient)
 	userHandler := uhandler.New(userService)
 
-	authService := aservice.New(userRepository, config)
-	authHandler := ahandler.New(authService, config)
+	authService, err := aservice.New(userRepository, config)
+	if err != nil {
+		return fmt.Errorf("failed to instantiate authentication service: %w", err)
+	}
+	authHandler, err := ahandler.New(authService, config)
+	if err != nil {
+		return fmt.Errorf("failed to instantiate authentication handler: %w", err)
+	}
 
 	materialRepository := mrepository.New(db)
 	materialService := mservice.New(materialRepository)
 	materialHandler := mhandler.New(materialService)
 
+	assetService := asservice.New(msGraphClient)
+	assetHandler, err := ashandler.New(assetService, config)
+	if err != nil {
+		return fmt.Errorf("failed to instantiate asset handler: %w", err)
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ping", pingHandler.Ping)
+	mux.HandleFunc("POST /assets", assetHandler.Upload)
 	mux.HandleFunc("GET /settings/msgraph", settingHandler.GetMSGraphAuthCode)
 	mux.HandleFunc("GET /settings/msgraph/auth", settingHandler.ParseMSGraphAuthCode)
 	mux.HandleFunc("POST /login", authHandler.Login)
@@ -155,6 +176,9 @@ func (s *Scheduler) Start() error {
 }
 
 func (s *Scheduler) Stop() {
+	if s.Ticker == nil {
+		return
+	}
 	s.Ticker.Stop()
 }
 
