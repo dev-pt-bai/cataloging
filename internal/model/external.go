@@ -24,12 +24,31 @@ type MSGraphSendEmail struct {
 }
 
 type MSGraphUploadFile struct {
-	URLDownload string        `json:"@microsoft.graph.downloadUrl"`
-	ID          string        `json:"id"`
+	DownloadURL string        `json:"@microsoft.graph.downloadUrl"`
+	WebURL      string        `json:"webUrl"`
+	ItemID      string        `json:"id"`
 	Name        string        `json:"name"`
 	Size        int64         `json:"size"`
-	URLWeb      string        `json:"webUrl"`
 	Error       *MSGraphError `json:"error"`
+}
+
+func (f *MSGraphUploadFile) Asset(createdBy string) Asset {
+	if f == nil {
+		return Asset{}
+	}
+
+	return Asset{
+		ID:          f.ItemID,
+		Name:        f.Name,
+		Size:        f.Size,
+		DownloadURL: f.DownloadURL,
+		WebURL:      f.WebURL,
+		CreatedBy:   createdBy,
+	}
+}
+
+type MSGraphDeleteFile struct {
+	Error *MSGraphError `json:"error"`
 }
 
 type MSGraphError struct {

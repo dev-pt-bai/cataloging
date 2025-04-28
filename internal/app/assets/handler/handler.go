@@ -12,11 +12,13 @@ import (
 
 	"github.com/dev-pt-bai/cataloging/configs"
 	"github.com/dev-pt-bai/cataloging/internal/app/middleware"
+	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
 )
 
 type Service interface {
-	Upload(ctx context.Context, file multipart.File, header *multipart.FileHeader) *errors.Error
+	UploadFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, createdBy string) *errors.Error
+	DeleteFile(ctx context.Context, itemID string, deletedBy *model.Auth) *errors.Error
 }
 
 type Handler struct {
@@ -47,8 +49,9 @@ func New(service Service, config *configs.Config) (*Handler, error) {
 	return h, nil
 }
 
-func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
@@ -79,11 +82,27 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.Upload(r.Context(), file, header); err != nil {
+	if err := h.service.UploadFile(r.Context(), file, header, auth.UserID); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.UploadFileFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.UploadFileFailure.String(),
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *Handler) DeleteFile(w http.ResponseWriter, r *http.Request) {
+	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
+
+	if err := h.service.DeleteFile(r.Context(), r.PathValue("id"), auth); err != nil {
+		slog.ErrorContext(r.Context(), errors.New(errors.DeleteFileFailure).Wrap(err).Error(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.DeleteFileFailure.String(),
 		})
 		return
 	}

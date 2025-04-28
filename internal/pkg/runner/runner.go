@@ -13,6 +13,7 @@ import (
 
 	"github.com/dev-pt-bai/cataloging/configs"
 	ashandler "github.com/dev-pt-bai/cataloging/internal/app/assets/handler"
+	asrepository "github.com/dev-pt-bai/cataloging/internal/app/assets/repository"
 	asservice "github.com/dev-pt-bai/cataloging/internal/app/assets/service"
 	ahandler "github.com/dev-pt-bai/cataloging/internal/app/auth/handler"
 	aservice "github.com/dev-pt-bai/cataloging/internal/app/auth/service"
@@ -75,7 +76,8 @@ func (a *App) Start() error {
 	materialService := mservice.New(materialRepository)
 	materialHandler := mhandler.New(materialService)
 
-	assetService := asservice.New(msGraphClient)
+	assetRepository := asrepository.New(db)
+	assetService := asservice.New(assetRepository, msGraphClient)
 	assetHandler, err := ashandler.New(assetService, config)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate asset handler: %w", err)
@@ -83,7 +85,8 @@ func (a *App) Start() error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ping", pingHandler.Ping)
-	mux.HandleFunc("POST /assets", assetHandler.Upload)
+	mux.HandleFunc("POST /assets", assetHandler.UploadFile)
+	mux.HandleFunc("DELETE /assets/{id}", assetHandler.DeleteFile)
 	mux.HandleFunc("GET /settings/msgraph", settingHandler.GetMSGraphAuthCode)
 	mux.HandleFunc("GET /settings/msgraph/auth", settingHandler.ParseMSGraphAuthCode)
 	mux.HandleFunc("POST /login", authHandler.Login)
@@ -217,7 +220,7 @@ func Run() {
 		slog.Info("server failed to start")
 	case <-stopApp:
 		s.Stop()
-		slog.Info("scheduler stopped")
+		slog.Info("scheduler gracefully stopped")
 		if err := a.Stop(); err != nil {
 			slog.Error(fmt.Sprintf("stopping app failure: %v", err))
 			return

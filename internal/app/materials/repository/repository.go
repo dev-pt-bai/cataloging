@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
@@ -59,27 +58,27 @@ SELECT code, description, created_at, updated_at
 	WHERE code = ? AND deleted_at = 0`
 
 const UpdateMaterialTypeQuery = `
-UPDATE material_types SET description = ?, val_class = ?, updated_at = ?
+UPDATE material_types SET description = ?, val_class = ?, updated_at = (UNIX_TIMESTAMP())
 	WHERE code = ? AND deleted_at = 0`
 
 const UpdateMaterialUoMQuery = `
-UPDATE material_uoms SET description = ?, updated_at = ?
+UPDATE material_uoms SET description = ?, updated_at = (UNIX_TIMESTAMP())
 	WHERE code = ? AND deleted_at = 0`
 
 const UpdateMaterialGroupQuery = `
-UPDATE material_groups SET description = ?, updated_at = ?
+UPDATE material_groups SET description = ?, updated_at = (UNIX_TIMESTAMP())
 	WHERE code = ? AND deleted_at = 0`
 
 const DeleteMaterialTypeQuery = `
-UPDATE material_types SET deleted_at = ?
+UPDATE material_types SET deleted_at = (UNIX_TIMESTAMP())
 	WHERE code = ?`
 
 const DeleteMaterialUoMQuery = `
-UPDATE material_uoms SET deleted_at = ?
+UPDATE material_uoms SET deleted_at = (UNIX_TIMESTAMP())
 	WHERE code = ?`
 
 const DeleteMaterialGroupQuery = `
-UPDATE material_groups SET deleted_at = ?
+UPDATE material_groups SET deleted_at = (UNIX_TIMESTAMP())
 	WHERE code = ?`
 
 func (r *Repository) CreateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error {
@@ -343,7 +342,7 @@ func (r *Repository) GetMaterialGroup(ctx context.Context, code string) (*model.
 }
 
 func (r *Repository) UpdateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error {
-	res, err := r.db.ExecContext(ctx, UpdateMaterialTypeQuery, mt.Description, mt.ValuationClass, time.Now().Unix(), mt.Code)
+	res, err := r.db.ExecContext(ctx, UpdateMaterialTypeQuery, mt.Description, mt.ValuationClass, mt.Code)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
@@ -361,7 +360,7 @@ func (r *Repository) UpdateMaterialType(ctx context.Context, mt model.MaterialTy
 }
 
 func (r *Repository) UpdateMaterialUoM(ctx context.Context, uom model.MaterialUoM) *errors.Error {
-	res, err := r.db.ExecContext(ctx, UpdateMaterialUoMQuery, uom.Description, time.Now().Unix(), uom.Code)
+	res, err := r.db.ExecContext(ctx, UpdateMaterialUoMQuery, uom.Description, uom.Code)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
@@ -379,7 +378,7 @@ func (r *Repository) UpdateMaterialUoM(ctx context.Context, uom model.MaterialUo
 }
 
 func (r *Repository) UpdateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error {
-	res, err := r.db.ExecContext(ctx, UpdateMaterialGroupQuery, mg.Description, time.Now().Unix(), mg.Code)
+	res, err := r.db.ExecContext(ctx, UpdateMaterialGroupQuery, mg.Description, mg.Code)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
@@ -397,7 +396,7 @@ func (r *Repository) UpdateMaterialGroup(ctx context.Context, mg model.MaterialG
 }
 
 func (r *Repository) DeleteMaterialType(ctx context.Context, code string) *errors.Error {
-	_, err := r.db.ExecContext(ctx, DeleteMaterialTypeQuery, time.Now().Unix(), code)
+	_, err := r.db.ExecContext(ctx, DeleteMaterialTypeQuery, code)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
@@ -406,7 +405,7 @@ func (r *Repository) DeleteMaterialType(ctx context.Context, code string) *error
 }
 
 func (r *Repository) DeleteMaterialUoM(ctx context.Context, code string) *errors.Error {
-	_, err := r.db.ExecContext(ctx, DeleteMaterialUoMQuery, time.Now().Unix(), code)
+	_, err := r.db.ExecContext(ctx, DeleteMaterialUoMQuery, code)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
@@ -415,7 +414,7 @@ func (r *Repository) DeleteMaterialUoM(ctx context.Context, code string) *errors
 }
 
 func (r *Repository) DeleteMaterialGroup(ctx context.Context, code string) *errors.Error {
-	_, err := r.db.ExecContext(ctx, DeleteMaterialGroupQuery, time.Now().Unix(), code)
+	_, err := r.db.ExecContext(ctx, DeleteMaterialGroupQuery, code)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}

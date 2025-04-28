@@ -6,7 +6,35 @@ import (
 	"fmt"
 	"math"
 	"strings"
+
+	"github.com/google/uuid"
 )
+
+type Material struct {
+	ID            uuid.UUID      `json:"id"`
+	Number        *string        `json:"number"`
+	Type          MaterialType   `json:"type"`
+	UoM           MaterialUoM    `json:"uom"`
+	Plant         Plant          `json:"plant"`
+	Manufacturer  *string        `json:"manufacturer"`
+	Group         MaterialGroup  `json:"group"`
+	EquipmentCode *string        `json:"equipmentCode"`
+	ShortText     *string        `json:"shortText"`
+	LongText      string         `json:"longText"`
+	Note          *string        `json:"note"`
+	Attachments   []Asset        `json:"attachments"`
+	Status        MaterialStatus `json:"status"`
+	RequestID     uuid.UUID      `json:"requestID"`
+	CreatedAt     int64          `json:"createdAt"`
+	UpdatedAt     int64          `json:"updatedAt"`
+}
+
+type Plant struct {
+	Code        string `json:"code"`
+	Description string `json:"description"`
+	CreatedAt   int64  `json:"createdAt"`
+	UpdatedAt   int64  `json:"updatedAt"`
+}
 
 type MaterialType struct {
 	Code           string  `json:"code"`
@@ -34,10 +62,11 @@ func (mts *MaterialTypes) Scan(src any) error {
 	return json.Unmarshal(b, mts)
 }
 
-func (mts *MaterialTypes) Reponse(page Page) map[string]any {
+func (mts *MaterialTypes) Response(page Page) map[string]any {
 	if mts == nil {
 		return nil
 	}
+
 	totalPages := int64(math.Ceil(float64(mts.Count) / float64(page.ItemPerPage)))
 	return map[string]any{
 		"data": mts.Data,
@@ -88,10 +117,11 @@ func (uoms *MaterialUoMs) Scan(src any) error {
 	return json.Unmarshal(b, uoms)
 }
 
-func (uoms *MaterialUoMs) Reponse(page Page) map[string]any {
+func (uoms *MaterialUoMs) Response(page Page) map[string]any {
 	if uoms == nil {
 		return nil
 	}
+
 	totalPages := int64(math.Ceil(float64(uoms.Count) / float64(page.ItemPerPage)))
 	return map[string]any{
 		"data": uoms.Data,
@@ -142,10 +172,11 @@ func (mgs *MaterialGroups) Scan(src any) error {
 	return json.Unmarshal(b, mgs)
 }
 
-func (mgs *MaterialGroups) Reponse(page Page) map[string]any {
+func (mgs *MaterialGroups) Response(page Page) map[string]any {
 	if mgs == nil {
 		return nil
 	}
+
 	totalPages := int64(math.Ceil(float64(mgs.Count) / float64(page.ItemPerPage)))
 	return map[string]any{
 		"data": mgs.Data,
@@ -169,6 +200,20 @@ func (mgs *MaterialGroups) Reponse(page Page) map[string]any {
 			}(page.Number, totalPages),
 		},
 	}
+}
+
+type MaterialStatus string
+
+type Asset struct {
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	Size        int64   `json:"size"`
+	DownloadURL string  `json:"downloadURL"`
+	WebURL      string  `json:"webURL"`
+	CreatedBy   string  `json:"createdBy"`
+	MaterialID  *string `json:"materialID"`
+	CreatedAt   int64   `json:"createdAt"`
+	UpdatedAt   int64   `json:"updatedAt"`
 }
 
 type UpsertMaterialTypeRequest struct {
