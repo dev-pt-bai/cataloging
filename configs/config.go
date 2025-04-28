@@ -38,6 +38,7 @@ type MsGraph struct {
 	RedirectURI       string          `json:"redirectURI"`
 	Scope             string          `json:"scope"`
 	DirectoryName     string          `json:"directoryName"`
+	DriveID           string          `json:"driveID"`
 	MaxFileSize       int64           `json:"maxFileSize"`
 	SupportedFileExt  []string        `json:"supportedFileExt"`
 	RefreshInterval   time.Duration   `json:"refreshInterval"`

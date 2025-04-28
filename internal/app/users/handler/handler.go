@@ -105,7 +105,7 @@ func (h *Handler) SendVerificationEmail(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (h *Handler) VerifyUser(w http.ResponseWriter, r *http.Request) {
@@ -200,7 +200,7 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(users.Reponse(criteria.Page))
+	json.NewEncoder(w).Encode(users.Response(criteria.Page))
 }
 
 func (h *Handler) buildListUsersCriteria(q url.Values) (model.ListUsersCriteria, string) {

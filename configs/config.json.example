@@ -18,6 +18,7 @@
             "redirectURI": "yourMSGraphAPIRedirectURI"
             "scopes": "https://graph.microsoft.com/.default",
             "directoryName": "yourOnedriveDirectoryName",
+            "driveID": "yourOnedriveDriveID",
             "maxFileSize": 0,
             "supportedFileExt": [
                 ".pdf",

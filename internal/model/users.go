@@ -75,10 +75,11 @@ func (u *Users) Scan(src any) error {
 	return json.Unmarshal(b, u)
 }
 
-func (u *Users) Reponse(page Page) map[string]any {
+func (u *Users) Response(page Page) map[string]any {
 	if u == nil {
 		return nil
 	}
+
 	totalPages := int64(math.Ceil(float64(u.Count) / float64(page.ItemPerPage)))
 	return map[string]any{
 		"data": u.Data,

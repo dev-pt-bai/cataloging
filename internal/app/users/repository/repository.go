@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
@@ -34,7 +33,7 @@ SELECT user_id, user_email, otp, created_at, expired_at
 	WHERE user_id = ? AND otp = ?`
 
 const VerifyUserQuery = `
-UPDATE users SET is_verified = 1, updated_at = ?
+UPDATE users SET is_verified = 1, updated_at = (UNIX_TIMESTAMP())
 	WHERE id = ? AND deleted_at = 0`
 
 const ListUserQuery = `
@@ -47,11 +46,11 @@ SELECT id, name, email, password, is_admin, is_verified, created_at, updated_at
 	WHERE id = ? AND deleted_at = 0`
 
 const UpdateUserQuery = `
-UPDATE users SET name = ?, email = ?, password = ?, is_verified = ?, updated_at = ?
+UPDATE users SET name = ?, email = ?, password = ?, is_verified = ?, updated_at = (UNIX_TIMESTAMP())
 	WHERE id = ? AND deleted_at = 0`
 
 const DeleteUserQuery = `
-UPDATE users SET deleted_at = ?
+UPDATE users SET deleted_at = (UNIX_TIMESTAMP())
 	WHERE id = ?`
 
 func (r *Repository) CreateUser(ctx context.Context, user model.User) *errors.Error {
@@ -101,7 +100,7 @@ func (r *Repository) GetOTP(ctx context.Context, userID string, code string) (*m
 }
 
 func (r *Repository) VerifyUser(ctx context.Context, ID string) *errors.Error {
-	res, err := r.db.ExecContext(ctx, VerifyUserQuery, time.Now().Unix(), ID)
+	res, err := r.db.ExecContext(ctx, VerifyUserQuery, ID)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
@@ -237,7 +236,7 @@ func (r *Repository) GetUser(ctx context.Context, ID string) (*model.User, *erro
 }
 
 func (r *Repository) UpdateUser(ctx context.Context, user model.User) *errors.Error {
-	res, err := r.db.ExecContext(ctx, UpdateUserQuery, user.Name, user.Email, user.Password, user.IsVerified, time.Now().Unix(), user.ID)
+	res, err := r.db.ExecContext(ctx, UpdateUserQuery, user.Name, user.Email, user.Password, user.IsVerified, user.ID)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
@@ -255,7 +254,7 @@ func (r *Repository) UpdateUser(ctx context.Context, user model.User) *errors.Er
 }
 
 func (r *Repository) DeleteUser(ctx context.Context, ID string) *errors.Error {
-	_, err := r.db.ExecContext(ctx, DeleteUserQuery, time.Now().Unix(), ID)
+	_, err := r.db.ExecContext(ctx, DeleteUserQuery, ID)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}

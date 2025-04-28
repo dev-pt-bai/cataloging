@@ -220,7 +220,7 @@ func (h *Handler) ListMaterialTypes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(mts.Reponse(criteria.Page))
+	json.NewEncoder(w).Encode(mts.Response(criteria.Page))
 }
 
 func (h *Handler) ListMaterialUoMs(w http.ResponseWriter, r *http.Request) {
@@ -252,7 +252,7 @@ func (h *Handler) ListMaterialUoMs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(uoms.Reponse(criteria.Page))
+	json.NewEncoder(w).Encode(uoms.Response(criteria.Page))
 }
 
 func (h *Handler) ListMaterialGroups(w http.ResponseWriter, r *http.Request) {
@@ -284,7 +284,7 @@ func (h *Handler) ListMaterialGroups(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(mgs.Reponse(criteria.Page))
+	json.NewEncoder(w).Encode(mgs.Response(criteria.Page))
 }
 
 func (h *Handler) buildListMaterialTypesCriteria(q url.Values) (model.ListMaterialTypesCriteria, string) {

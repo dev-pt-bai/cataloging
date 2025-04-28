@@ -41,12 +41,14 @@ const (
 	MaterialTypeNotFound         ErrorCode = "404003"
 	MaterialUoMNotFound          ErrorCode = "404004"
 	MaterialGroupNotFound        ErrorCode = "404005"
+	AssetNotFound                ErrorCode = "404006"
 	UserAlreadyExists            ErrorCode = "409001"
 	UserOTPAlreadyExists         ErrorCode = "409002"
 	UserAlreadyVerified          ErrorCode = "409003"
 	MaterialTypeAlreadyExists    ErrorCode = "409004"
 	MaterialUoMAlreadyExists     ErrorCode = "409005"
 	MaterialGroupAlreadyExists   ErrorCode = "409006"
+	AssetAlreadyExists           ErrorCode = "409007"
 	UnsupportedFileType          ErrorCode = "415001"
 	MissingMSGraphParameter      ErrorCode = "422001"
 	MissingMSGraphAuthCode       ErrorCode = "422002"
@@ -68,6 +70,7 @@ const (
 	GetMSGraphTokenFailure       ErrorCode = "502001"
 	SendEmailFailure             ErrorCode = "502002"
 	UploadFileFailure            ErrorCode = "502003"
+	DeleteFileFailure            ErrorCode = "502004"
 )
 
 type Error struct {
