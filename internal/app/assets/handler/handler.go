@@ -59,6 +59,7 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ParsingFileFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -69,6 +70,7 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.FileOversize.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -78,6 +80,7 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnsupportedMediaType)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.UnsupportedFileType.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -87,6 +90,7 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.UploadFileFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -103,6 +107,7 @@ func (h *Handler) DeleteFile(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.DeleteFileFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}

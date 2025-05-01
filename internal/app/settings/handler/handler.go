@@ -67,6 +67,7 @@ func (h *Handler) GetMSGraphAuthCode(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -77,6 +78,7 @@ func (h *Handler) GetMSGraphAuthCode(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.MissingMSGraphParameter.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -113,6 +115,7 @@ func (h *Handler) ParseMSGraphAuthCode(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		json.NewEncoder(w).Encode(map[string]any{
 			"errorCode": errors.MissingMSGraphAuthCode.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -130,6 +133,7 @@ func (h *Handler) ParseMSGraphAuthCode(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]any{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}

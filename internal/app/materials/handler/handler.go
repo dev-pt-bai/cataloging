@@ -50,6 +50,7 @@ func (h *Handler) CreateMaterialType(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -60,6 +61,7 @@ func (h *Handler) CreateMaterialType(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONDecodeFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -70,6 +72,7 @@ func (h *Handler) CreateMaterialType(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONValidationFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -84,6 +87,7 @@ func (h *Handler) CreateMaterialType(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -100,6 +104,7 @@ func (h *Handler) CreateMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -110,6 +115,7 @@ func (h *Handler) CreateMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONDecodeFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -120,6 +126,7 @@ func (h *Handler) CreateMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONValidationFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -134,6 +141,7 @@ func (h *Handler) CreateMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -150,6 +158,7 @@ func (h *Handler) CreateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -160,6 +169,7 @@ func (h *Handler) CreateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONDecodeFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -170,6 +180,7 @@ func (h *Handler) CreateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONValidationFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -184,6 +195,7 @@ func (h *Handler) CreateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -200,6 +212,7 @@ func (h *Handler) ListMaterialTypes(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.InvalidQueryParameter.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -215,6 +228,7 @@ func (h *Handler) ListMaterialTypes(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -232,6 +246,7 @@ func (h *Handler) ListMaterialUoMs(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.InvalidQueryParameter.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -247,6 +262,7 @@ func (h *Handler) ListMaterialUoMs(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -264,6 +280,7 @@ func (h *Handler) ListMaterialGroups(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.InvalidQueryParameter.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -279,6 +296,7 @@ func (h *Handler) ListMaterialGroups(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -384,6 +402,7 @@ func (h *Handler) GetMaterialType(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -408,6 +427,7 @@ func (h *Handler) GetMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -432,6 +452,7 @@ func (h *Handler) GetMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -451,6 +472,7 @@ func (h *Handler) UpdateMaterialType(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -461,6 +483,7 @@ func (h *Handler) UpdateMaterialType(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONDecodeFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -472,6 +495,7 @@ func (h *Handler) UpdateMaterialType(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONValidationFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -486,6 +510,7 @@ func (h *Handler) UpdateMaterialType(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -502,6 +527,7 @@ func (h *Handler) UpdateMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -512,6 +538,7 @@ func (h *Handler) UpdateMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONDecodeFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -523,6 +550,7 @@ func (h *Handler) UpdateMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONValidationFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -537,6 +565,7 @@ func (h *Handler) UpdateMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -553,6 +582,7 @@ func (h *Handler) UpdateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -563,6 +593,7 @@ func (h *Handler) UpdateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONDecodeFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -574,6 +605,7 @@ func (h *Handler) UpdateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONValidationFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -588,6 +620,7 @@ func (h *Handler) UpdateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -604,6 +637,7 @@ func (h *Handler) DeleteMaterialType(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -613,6 +647,7 @@ func (h *Handler) DeleteMaterialType(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -629,6 +664,7 @@ func (h *Handler) DeleteMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -638,6 +674,7 @@ func (h *Handler) DeleteMaterialUoM(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -654,6 +691,7 @@ func (h *Handler) DeleteMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -663,6 +701,7 @@ func (h *Handler) DeleteMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}

@@ -49,7 +49,7 @@ func (s *Service) Login(ctx context.Context, user model.User) (*model.Auth, *err
 		return nil, errors.New(errors.UserPasswordMismatch).Wrap(err)
 	}
 
-	auth, err := auth.GenerateToken(u.ID, u.IsAdmin, s.tokenExpiry, s.secretJWT)
+	auth, err := auth.GenerateToken(u, s.tokenExpiry, s.secretJWT)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (s *Service) RefreshToken(ctx context.Context, userID string) (*model.Auth,
 		return nil, err
 	}
 
-	newAuth, err := auth.GenerateAccessToken(u.ID, u.IsAdmin, s.tokenExpiry, s.secretJWT)
+	newAuth, err := auth.GenerateAccessToken(u, s.tokenExpiry, s.secretJWT)
 	if err != nil {
 		return nil, err
 	}

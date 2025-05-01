@@ -2,9 +2,12 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/dev-pt-bai/cataloging/configs"
 	"github.com/dev-pt-bai/cataloging/internal/model"
+	"github.com/dev-pt-bai/cataloging/internal/pkg/auth"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -13,7 +16,7 @@ type Repository interface {
 	CreateUser(ctx context.Context, user model.User) *errors.Error
 	CreateOTP(ctx context.Context, otp model.UserOTP) *errors.Error
 	GetOTP(ctx context.Context, userID string, code string) (*model.UserOTP, *errors.Error)
-	VerifyUser(ctx context.Context, ID string) *errors.Error
+	VerifyUser(ctx context.Context, ID string) (*model.User, *errors.Error)
 	ListUsers(ctx context.Context, criteria model.ListUsersCriteria) (*model.Users, *errors.Error)
 	GetUser(ctx context.Context, ID string) (*model.User, *errors.Error)
 	UpdateUser(ctx context.Context, user model.User) *errors.Error
@@ -27,10 +30,26 @@ type MSGraphClient interface {
 type Service struct {
 	repository    Repository
 	msGraphClient MSGraphClient
+	tokenExpiry   time.Duration
+	secretJWT     string
 }
 
-func New(repository Repository, msGraphClient MSGraphClient) *Service {
-	return &Service{repository: repository, msGraphClient: msGraphClient}
+func New(repository Repository, msGraphClient MSGraphClient, config *configs.Config) (*Service, error) {
+	s := new(Service)
+	s.repository = repository
+	s.msGraphClient = msGraphClient
+
+	if config == nil {
+		return nil, fmt.Errorf("missing config")
+	}
+	s.tokenExpiry = config.App.TokenExpiry
+
+	if len(config.Secret.JWT) == 0 {
+		return nil, fmt.Errorf("missing JWT secret")
+	}
+	s.secretJWT = config.Secret.JWT
+
+	return s, nil
 }
 
 func (s *Service) CreateUser(ctx context.Context, user model.User) *errors.Error {
@@ -73,21 +92,27 @@ func (s *Service) SendVerificationEmail(ctx context.Context, userID string) *err
 	return nil
 }
 
-func (s *Service) VerifyUser(ctx context.Context, userID string, code string) *errors.Error {
+func (s *Service) VerifyUser(ctx context.Context, userID string, code string) (*model.Auth, *errors.Error) {
 	otp, err := s.repository.GetOTP(ctx, userID, code)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if otp.ExpiredAt < time.Now().Unix() {
-		return errors.New(errors.ExpiredOTP)
+		return nil, errors.New(errors.ExpiredOTP)
 	}
 
-	if err := s.repository.VerifyUser(ctx, userID); err != nil {
-		return err
+	user, err := s.repository.VerifyUser(ctx, userID)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	auth, err := auth.GenerateAccessToken(user, s.tokenExpiry, s.secretJWT)
+	if err != nil {
+		return nil, err
+	}
+
+	return auth, nil
 }
 
 func (s *Service) ListUsers(ctx context.Context, criteria model.ListUsersCriteria) (*model.Users, *errors.Error) {

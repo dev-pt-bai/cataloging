@@ -68,6 +68,7 @@ func Authenticator(next http.Handler, config *configs.Config) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{
 				"errorCode": errors.MissingAuthorizationHeader.String(),
+				"requestID": requestID,
 			})
 			return
 		}
@@ -78,6 +79,7 @@ func Authenticator(next http.Handler, config *configs.Config) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{
 				"errorCode": errors.InvalidAuthorizationType.String(),
+				"requestID": requestID,
 			})
 			return
 		}
@@ -88,6 +90,7 @@ func Authenticator(next http.Handler, config *configs.Config) http.Handler {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{
 				"errorCode": errors.UndefinedJWTSecret.String(),
+				"requestID": requestID,
 			})
 			return
 		}
@@ -98,6 +101,7 @@ func Authenticator(next http.Handler, config *configs.Config) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{
 				"errorCode": errors.InvalidAuthorizationType.String(),
+				"requestID": requestID,
 			})
 			return
 		}
@@ -107,6 +111,7 @@ func Authenticator(next http.Handler, config *configs.Config) http.Handler {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{
 				"errorCode": errors.IllegalUseOfRefreshToken.String(),
+				"requestID": requestID,
 			})
 			return
 		}
@@ -116,6 +121,7 @@ func Authenticator(next http.Handler, config *configs.Config) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{
 				"errorCode": errors.ExpiredToken.String(),
+				"requestID": requestID,
 			})
 			return
 		}

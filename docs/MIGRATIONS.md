@@ -4,7 +4,7 @@
 
 Before you begin, ensure you have the following installed:
 
-- MySQL
+- MySQL (version 8.1.0 or later)
 
 ### Optional migration tools
 
@@ -111,6 +111,8 @@ If you use go-migrate, all it takes is just run this command:
 ```bash
 migrate -database "mysql://[user][:password]@tcp([host][:port])/[database_name]" -path migrations up
 ```
+
+Actually, migrations are run automatically each time the app starts.
 
 ## Reverting the migrations
 

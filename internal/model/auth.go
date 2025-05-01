@@ -9,6 +9,7 @@ type Auth struct {
 	IsRefreshToken bool   `json:"-"`
 	UserID         string `json:"-"`
 	IsAdmin        Flag   `json:"-"`
+	IsVerified     Flag   `json:"-"`
 }
 
 func (a Auth) MapClaims(isRefreshToken bool) jwt.MapClaims {
@@ -19,6 +20,7 @@ func (a Auth) MapClaims(isRefreshToken bool) jwt.MapClaims {
 
 	if !isRefreshToken {
 		m["isAdmin"] = a.IsAdmin
+		m["isVerified"] = a.IsVerified
 		return m
 	}
 	m["isRefreshToken"] = true

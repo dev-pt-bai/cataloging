@@ -60,7 +60,10 @@ func (a *App) Start() error {
 	}
 
 	userRepository := urepository.New(db)
-	userService := uservice.New(userRepository, msGraphClient)
+	userService, err := uservice.New(userRepository, msGraphClient, config)
+	if err != nil {
+		return fmt.Errorf("failed to instantiate user service: %w", err)
+	}
 	userHandler := uhandler.New(userService)
 
 	authService, err := aservice.New(userRepository, config)

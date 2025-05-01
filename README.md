@@ -19,7 +19,7 @@ This is a simple Go-based web server application. The application exposes a REST
 Before you begin, ensure you have the following installed:
 
 - Go (version 1.24 or later)
-- Database (MySQL)
+- MySQL (version 8.1.0 or later)
 
 ### Steps
 
@@ -56,9 +56,11 @@ Edit `config.json` to include, e.g., your database connection details
 }
 ```
 
+This app interacts with Microsoft Graph API. To properly set the related environtmen variables, see the [Microsoft Graph API setup](docs/MSGRAPHAPI.md)
+
 4. Run database migrations
 
-You can run migrations manually or use your favorite tool to apply the migration scripts in the `migrations/` folder.
+You can run migrations manually or use your favorite tool to apply the migration scripts in the `migrations/` folder. In fact, starting the app will automatically run the migrations too.
 
 To create new migration scripts, see the [migrations guideline](docs/MIGRATIONS.md).
 
@@ -68,7 +70,7 @@ To create new migration scripts, see the [migrations guideline](docs/MIGRATIONS.
 go run cmd/app/main.go
 ```
 
-The application will start at http://{HOST}:{PORT}
+The application will start at `http://{HOST}:{PORT}`
 
 ## Usage
 

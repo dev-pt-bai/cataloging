@@ -18,7 +18,7 @@ import (
 type Service interface {
 	CreateUser(ctx context.Context, user model.User) *errors.Error
 	SendVerificationEmail(ctx context.Context, userID string) *errors.Error
-	VerifyUser(ctx context.Context, userID string, code string) *errors.Error
+	VerifyUser(ctx context.Context, userID string, code string) (*model.Auth, *errors.Error)
 	ListUsers(ctx context.Context, criteria model.ListUsersCriteria) (*model.Users, *errors.Error)
 	GetUserByID(ctx context.Context, ID string) (*model.User, *errors.Error)
 	UpdateUser(ctx context.Context, user model.User) *errors.Error
@@ -42,6 +42,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONDecodeFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -52,6 +53,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONValidationFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -66,6 +68,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -83,6 +86,7 @@ func (h *Handler) SendVerificationEmail(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -101,6 +105,7 @@ func (h *Handler) SendVerificationEmail(w http.ResponseWriter, r *http.Request) 
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -112,12 +117,12 @@ func (h *Handler) VerifyUser(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	userID := r.PathValue("id")
-	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if auth.UserID != userID && !auth.IsAdmin {
+	if auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth); auth.UserID != userID && !auth.IsAdmin {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -128,6 +133,7 @@ func (h *Handler) VerifyUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONDecodeFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -138,11 +144,13 @@ func (h *Handler) VerifyUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONValidationFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
 
-	if err := h.service.VerifyUser(r.Context(), userID, req.Code); err != nil {
+	auth, err := h.service.VerifyUser(r.Context(), userID, req.Code)
+	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
 		case err.ContainsCodes(errors.UserOTPNotFound, errors.UserNotFound):
@@ -154,11 +162,13 @@ func (h *Handler) VerifyUser(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(auth)
 }
 
 func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
@@ -170,6 +180,7 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -180,6 +191,7 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.InvalidQueryParameter.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -195,6 +207,7 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -290,6 +303,7 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -305,6 +319,7 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -325,6 +340,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -335,6 +351,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONDecodeFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -346,6 +363,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONValidationFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -360,6 +378,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -377,6 +396,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -386,6 +406,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
