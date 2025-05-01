@@ -34,7 +34,7 @@ SELECT user_id, user_email, otp, created_at, expired_at
 
 const VerifyUserQuery = `
 UPDATE users SET is_verified = 1, updated_at = (UNIX_TIMESTAMP())
-	WHERE id = ? AND deleted_at = 0`
+	WHERE id = ? AND is_verified = 0 AND deleted_at = 0`
 
 const ListUserQuery = `
 WITH
@@ -99,22 +99,38 @@ func (r *Repository) GetOTP(ctx context.Context, userID string, code string) (*m
 	return otp, nil
 }
 
-func (r *Repository) VerifyUser(ctx context.Context, ID string) *errors.Error {
-	res, err := r.db.ExecContext(ctx, VerifyUserQuery, ID)
+func (r *Repository) VerifyUser(ctx context.Context, ID string) (*model.User, *errors.Error) {
+	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault})
 	if err != nil {
-		return errors.New(errors.RunQueryFailure).Wrap(err)
+		return nil, errors.New(errors.StartingTransactionFailure).Wrap(err)
+	}
+	defer tx.Rollback()
+
+	res, err := tx.ExecContext(ctx, VerifyUserQuery, ID)
+	if err != nil {
+		return nil, errors.New(errors.RunQueryFailure).Wrap(err)
 	}
 
 	row, err := res.RowsAffected()
 	if err != nil {
-		return errors.New(errors.RowsAffectedFailure).Wrap(err)
+		return nil, errors.New(errors.RowsAffectedFailure).Wrap(err)
 	}
 
 	if row < 1 {
-		return errors.New(errors.UserNotFound)
+		return nil, errors.New(errors.UserNotFound)
 	}
 
-	return nil
+	user := new(model.User)
+	err = tx.QueryRowContext(ctx, GetUserQuery, ID).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.IsAdmin, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
+		return nil, errors.New(errors.RunQueryFailure).Wrap(err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, errors.New(errors.CommittingTransactionFailure).Wrap(err)
+	}
+
+	return user, nil
 }
 
 func (r *Repository) ListUsers(ctx context.Context, criteria model.ListUsersCriteria) (*model.Users, *errors.Error) {

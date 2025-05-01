@@ -50,6 +50,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONDecodeFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -68,6 +69,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -85,6 +87,7 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.MissingAuthorizationHeader.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -95,6 +98,7 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.InvalidAuthorizationType.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -106,6 +110,7 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.InvalidAuthorizationType.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -115,6 +120,7 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.IllegalUserOfAccessToken.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -125,6 +131,7 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.JSONDecodeFailure.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -135,6 +142,7 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
 		})
 		return
 	}
@@ -150,6 +158,7 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
 		})
 		return
 	}

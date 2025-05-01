@@ -27,10 +27,6 @@ SELECT id, name, size, download_url, web_url, created_by, material_id, created_a
 
 const DeleteAssetQuery = `
 UPDATE assets SET deleted_at = (UNIX_TIMESTAMP())
-	WHERE id = ? AND created_by = ?`
-
-const DeleteAssetByAdminQuery = `
-UPDATE assets SET deleted_at = (UNIX_TIMESTAMP())
 	WHERE id = ?`
 
 func (r *Repository) CreateAsset(ctx context.Context, asset model.Asset) *errors.Error {
@@ -58,17 +54,8 @@ func (r *Repository) GetAsset(ctx context.Context, ID string) (*model.Asset, *er
 	return a, nil
 }
 
-func (r *Repository) DeleteAssetByCreator(ctx context.Context, ID string, deleted_by string) *errors.Error {
-	_, err := r.db.ExecContext(ctx, DeleteAssetQuery, ID, deleted_by)
-	if err != nil {
-		return errors.New(errors.RunQueryFailure).Wrap(err)
-	}
-
-	return nil
-}
-
-func (r *Repository) DeleteAssetByAdmin(ctx context.Context, ID string) *errors.Error {
-	_, err := r.db.ExecContext(ctx, DeleteAssetByAdminQuery, ID)
+func (r *Repository) DeleteAsset(ctx context.Context, ID string) *errors.Error {
+	_, err := r.db.ExecContext(ctx, DeleteAssetQuery, ID)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}

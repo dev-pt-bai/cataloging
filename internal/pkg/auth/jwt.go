@@ -8,7 +8,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateToken(userID string, isAdmin model.Flag, tokenExpiry time.Duration, secret string) (*model.Auth, *errors.Error) {
+func GenerateToken(user *model.User, tokenExpiry time.Duration, secret string) (*model.Auth, *errors.Error) {
+	if user == nil {
+		return nil, errors.New(errors.UserNotFound)
+	}
+
 	accessExpiredAt := time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC).Unix()
 	refreshExpiredAt := accessExpiredAt
 	if tokenExpiry > 0 {
@@ -18,9 +22,10 @@ func GenerateToken(userID string, isAdmin model.Flag, tokenExpiry time.Duration,
 	}
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, (model.Auth{
-		UserID:    userID,
-		IsAdmin:   isAdmin,
-		ExpiredAt: accessExpiredAt,
+		UserID:     user.ID,
+		IsAdmin:    user.IsAdmin,
+		IsVerified: user.IsVerified,
+		ExpiredAt:  accessExpiredAt,
 	}).MapClaims(false))
 
 	signedAccessToken, err := accessToken.SignedString([]byte(secret))
@@ -29,7 +34,7 @@ func GenerateToken(userID string, isAdmin model.Flag, tokenExpiry time.Duration,
 	}
 
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, (model.Auth{
-		UserID:    userID,
+		UserID:    user.ID,
 		ExpiredAt: refreshExpiredAt,
 	}).MapClaims(true))
 
@@ -47,16 +52,21 @@ func GenerateToken(userID string, isAdmin model.Flag, tokenExpiry time.Duration,
 	return &a, nil
 }
 
-func GenerateAccessToken(userID string, isAdmin model.Flag, tokenExpiry time.Duration, secret string) (*model.Auth, *errors.Error) {
+func GenerateAccessToken(user *model.User, tokenExpiry time.Duration, secret string) (*model.Auth, *errors.Error) {
+	if user == nil {
+		return nil, errors.New(errors.UserNotFound)
+	}
+
 	accessExpiredAt := time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC).Unix()
 	if tokenExpiry > 0 {
 		accessExpiredAt = time.Now().Add(time.Hour * tokenExpiry).Unix()
 	}
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, (model.Auth{
-		UserID:    userID,
-		IsAdmin:   isAdmin,
-		ExpiredAt: accessExpiredAt,
+		UserID:     user.ID,
+		IsAdmin:    user.IsAdmin,
+		IsVerified: user.IsVerified,
+		ExpiredAt:  accessExpiredAt,
 	}).MapClaims(false))
 
 	signedAccessToken, err := accessToken.SignedString([]byte(secret))
@@ -94,6 +104,7 @@ func ParseToken(token string, secret string) (*model.Auth, *errors.Error) {
 		IsRefreshToken: func(c map[string]any) bool { isRefreshToken, _ := c["isRefreshToken"].(bool); return isRefreshToken }(claims),
 		UserID:         func(c map[string]any) string { userID, _ := c["userID"].(string); return userID }(claims),
 		IsAdmin:        func(c map[string]any) model.Flag { isAdmin, _ := c["isAdmin"].(bool); return model.Flag(isAdmin) }(claims),
+		IsVerified:     func(c map[string]any) model.Flag { IsVrfd, _ := c["isVerified"].(bool); return model.Flag(IsVrfd) }(claims),
 		ExpiredAt:      func(c map[string]any) int64 { expiredAt, _ := c["expiredAt"].(float64); return int64(expiredAt) }(claims),
 	}
 

@@ -18,6 +18,108 @@ curl --location '{HOST}:{PORT}/ping'
 
 - 200
 
+### POST /assets
+
+Upload file to Microsoft Onedrive. Only pdf, jpg (or jpeg) and png files are acceptable. There is a limit for maximum allowable file size and it can be configured as part of the environment variables. The uploaded files are meant as attachment for materials. It could be material's datasheet, catalogue, drawing, picture or else.
+
+#### Example request
+
+```bash
+curl --location '{HOST}:{PORT}/assets' \
+--header 'Authorization: Bearer string' \
+--form 'file=@"path/to/file"'
+```
+
+#### Example response
+
+- 201
+
+- 400, 401, 403, 415, 502
+
+```json
+{
+    "errorCode": "string",
+    "requestID": "string"
+}
+```
+
+### DELETE /assets/{id}
+
+Delete file (permanently) from Microsoft Onedrive. Only the file uploader and administrator can delete an asset.
+
+#### Example request
+
+```bash
+curl --location --request DELETE '{HOST}:{PORT}/assets/{id}' \
+--header 'Authorization: Bearer string'
+```
+
+#### Example response
+
+- 204
+
+- 401, 403, 502
+
+```json
+{
+    "errorCode": "string",
+    "requestID": "string"
+}
+```
+
+### GET /settings/msgraph
+
+Get an URL for login to Microsoft with delegated authentication flow. The administrator is required to login via the provided URL, each time the application is started. After that, the application will periodically renew the access token to Microsoft Graph API in the background. Without this login, features that incorporates calling the Microsoft Graph API, such as sending email, upload and delete file will not be successful.
+
+#### Example request
+
+```bash
+curl --location '{HOST}:{PORT}/settings/msgraph' \
+--header 'Authorization: Bearer string'
+```
+
+#### Example response
+
+- 200
+
+```json
+{
+    "url": "string"
+}
+```
+
+- 401, 403, 422
+
+```json
+{
+    "errorCode": "string",
+    "requestID": "string"
+}
+```
+
+### GET /settings/msgraph/auth
+
+Serves solely as the redirect URI in the delegated authentication flow of Microsoft Graph API. It has no use outside this context. It parses the query parameter with the key `code`, returned after the administrator successfully login to Microsoft. The code is then used to fetch the first access token of Microsoft Graph API.
+
+#### Example request
+
+```bash
+curl --location 'localhost:8002/settings/msgraph/auth?code=string&error=string&error_description=string&state=string'
+```
+
+#### Example response
+
+- 204
+
+- 422, 500, 502
+
+```json
+{
+    "errorCode": "string",
+    "requestID": "string"
+}
+```
+
 ### POST /login
 
 Logs user into the system. The returned access token can be used for authorization purpose when calling most of the endpoints, while
@@ -50,7 +152,8 @@ curl --location '{HOST}:{PORT}/login' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -84,7 +187,8 @@ curl --location '{HOST}:{PORT}/refresh' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -113,7 +217,8 @@ curl --location '{HOST}:{PORT}/users' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -159,7 +264,8 @@ curl --location '{HOST}:{PORT}/users?name=string&isAdmin=bool&isVerified=bool&so
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -196,7 +302,8 @@ curl --location '{HOST}:{PORT}/users/{id}' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -225,7 +332,8 @@ curl --location --request PUT '{HOST}:{PORT}/users/{id}' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -238,6 +346,78 @@ Delete user's account. Only the respective user and administrators can delete th
 ```bash
 curl --location --request DELETE '{HOST}:{PORT}/users/{id}' \
 --header 'Authorization: Bearer string'
+```
+
+#### Example response
+
+- 204
+
+- 401, 403, 500
+
+```json
+{
+    "errorCode": "string",
+    "requestID": "string"
+}
+```
+
+### GET /users/{id}/verify
+
+Send an email with verification code to user. To be able to create a material request, user must be verified. An email can be used by multiple users, in which each user will get different verification code. A verification code typically lasts for 5 (five) minutes before it becomes expired. The code should be sent back to the server through `POST /users/{id}/verify` within this time limit.
+
+#### Example request
+
+```bash
+curl --location '{HOST}:{PORT}/users/{id}/verify' \
+--header 'Authorization: Bearer string'
+```
+
+#### Example response
+
+- 202
+
+- 401, 403, 404, 409, 500, 502
+
+```json
+{
+    "errorCode": "string",
+    "requestID": "string"
+}
+```
+
+### POST /users/{id}/verify
+
+Verify the user by sending a verification code which has been sent previously from `GET /users/{id}/verify`. In a successful attempt, it will return a new access token which marks that the user has been verified. Verification should only be carried out once. Re-verifying the already-verified user will result in an error. However, when the user's email is changed via an update, it needs to be re-verified.
+
+#### Example request
+
+```bash
+curl --location '{HOST}:{PORT}/users/{id}/verify' \
+--header 'Authorization: Bearer string' \
+--header 'Content-Type: application/json' \
+--data '{
+    "code": "string"
+}'
+```
+
+#### Example response
+
+- 200
+
+```json
+{
+    "accessToken": "string",
+    "expiredAt": 0
+}
+```
+
+- 400, 401, 403, 404, 500
+
+```json
+{
+    "errorCode": "string",
+    "requestID": "string"
+}
 ```
 
 ### POST /material_types
@@ -265,7 +445,8 @@ curl --location '{HOST}:{PORT}/material_types' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -293,7 +474,8 @@ curl --location '{HOST}:{PORT}/material_uoms' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -321,7 +503,8 @@ curl --location '{HOST}:{PORT}/material_groups' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -365,7 +548,8 @@ curl --location '{HOST}:{PORT}/material_types?description=string&sortBy=string&i
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -408,7 +592,8 @@ curl --location '{HOST}:{PORT}/material_uoms?description=string&sortBy=string&is
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -451,7 +636,8 @@ curl --location '{HOST}:{PORT}/material_groups?description=string&sortBy=string&
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -486,7 +672,8 @@ curl --location '{HOST}:{PORT}/material_types/{code}' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -520,7 +707,8 @@ curl --location '{HOST}:{PORT}/material_uoms/{code}' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -554,7 +742,8 @@ curl --location '{HOST}:{PORT}/material_groups/{code}' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -582,7 +771,8 @@ curl --location --request PUT '{HOST}:{PORT}/material_types/{code}' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -609,7 +799,8 @@ curl --location --request PUT '{HOST}:{PORT}/material_uoms/{code}' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -636,7 +827,8 @@ curl --location --request PUT '{HOST}:{PORT}/material_groups/{code}' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -659,7 +851,8 @@ curl --location --request DELETE '{HOST}:{PORT}/material_types/{code}' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -682,7 +875,8 @@ curl --location --request DELETE '{HOST}:{PORT}/material_uoms/{code}' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```
 
@@ -705,6 +899,7 @@ curl --location --request DELETE '{HOST}:{PORT}/material_groups/{code}' \
 
 ```json
 {
-    "errorCode": "string"
+    "errorCode": "string",
+    "requestID": "string"
 }
 ```

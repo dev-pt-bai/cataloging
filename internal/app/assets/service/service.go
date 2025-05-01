@@ -10,8 +10,8 @@ import (
 
 type Repository interface {
 	CreateAsset(ctx context.Context, asset model.Asset) *errors.Error
-	DeleteAssetByCreator(ctx context.Context, ID string, deleted_by string) *errors.Error
-	DeleteAssetByAdmin(ctx context.Context, ID string) *errors.Error
+	GetAsset(ctx context.Context, ID string) (*model.Asset, *errors.Error)
+	DeleteAsset(ctx context.Context, ID string) *errors.Error
 }
 
 type MSGraphClient interface {
@@ -47,8 +47,17 @@ func (s *Service) DeleteFile(ctx context.Context, itemID string, deletedBy *mode
 	}
 
 	if deletedBy.IsAdmin {
-		return s.repository.DeleteAssetByAdmin(ctx, itemID)
+		return s.repository.DeleteAsset(ctx, itemID)
 	}
 
-	return s.repository.DeleteAssetByCreator(ctx, itemID, deletedBy.UserID)
+	a, err := s.repository.GetAsset(ctx, itemID)
+	if err != nil {
+		return err
+	}
+
+	if a.CreatedBy != deletedBy.UserID {
+		return errors.New(errors.ResourceIsForbidden)
+	}
+
+	return s.repository.DeleteAsset(ctx, itemID)
 }
