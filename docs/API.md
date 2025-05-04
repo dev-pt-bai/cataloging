@@ -11,7 +11,7 @@ Check server's health. On a healthy server, it simply returns `200` response hea
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/ping'
+curl --location '[host]:[port]/ping'
 ```
 
 #### Example response
@@ -25,8 +25,8 @@ Upload file to Microsoft Onedrive. Only pdf, jpg (or jpeg) and png files are acc
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/assets' \
---header 'Authorization: Bearer string' \
+curl --location '[host]:[port]/assets' \
+--header 'Authorization: Bearer [token]' \
 --form 'file=@"path/to/file"'
 ```
 
@@ -50,8 +50,8 @@ Delete file (permanently) from Microsoft Onedrive. Only the file uploader and ad
 #### Example request
 
 ```bash
-curl --location --request DELETE '{HOST}:{PORT}/assets/{id}' \
---header 'Authorization: Bearer string'
+curl --location --request DELETE '[host]:[port]/assets/{id}' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response
@@ -74,8 +74,8 @@ Get an URL for login to Microsoft with delegated authentication flow. The admini
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/settings/msgraph' \
---header 'Authorization: Bearer string'
+curl --location '[host]:[port]/settings/msgraph' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response
@@ -128,9 +128,9 @@ the refresh token can be used to generate new access token if the old one expire
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/login' \
+curl --location '[host]:[port]/login' \
 --header 'Content-Type: application/json' \
---data-raw '{
+--data '{
     "id": "string,required",
     "password": "string,required"
 }'
@@ -164,8 +164,8 @@ Generate new access token using a refresh token. Refresh tokens can still be exp
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/refresh' \
---header 'Authorization: Bearer string' \
+curl --location '[host]:[port]/refresh' \
+--header 'Authorization: Bearer [token]' \
 --header 'Content-Type: application/json' \
 --data '{
     "id": "string,required"
@@ -199,7 +199,7 @@ Register new user.
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/users' \
+curl --location '[host]:[port]/users' \
 --header 'Content-Type: application/json' \
 --data '{
     "id": "string,required",
@@ -229,8 +229,8 @@ List existing users with filter, sort criteria and pagination through query para
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/users?name=string&isAdmin=bool&isVerified=bool&sortBy=string&isDescending=bool&limit=int&page=int' \
---header 'Authorization: Bearer string'
+curl --location '[host]:[port]/users?name=string&isAdmin=bool&isVerified=bool&sortBy=string&isDescending=bool&limit=int&page=int' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response
@@ -276,8 +276,8 @@ Get user's detail by ID. Only the respective user and administrators can access 
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/users/{id}' \
---header 'Authorization: Bearer string'
+curl --location '[host]:[port]/users/{id}' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response
@@ -314,10 +314,10 @@ Update user's detail. Only the respective user and administrators can update use
 #### Example request
 
 ```bash
-curl --location --request PUT '{HOST}:{PORT}/users/{id}' \
---header 'Authorization: Bearer string' \
+curl --location --request PUT '[host]:[port]/users/{id}' \
+--header 'Authorization: Bearer [token]' \
 --header 'Content-Type: application/json' \
---data-raw '{
+--data '{
     "name": "string,required",
     "email": "string,required",
     "password": "string,required"
@@ -344,8 +344,8 @@ Delete user's account. Only the respective user and administrators can delete th
 #### Example request
 
 ```bash
-curl --location --request DELETE '{HOST}:{PORT}/users/{id}' \
---header 'Authorization: Bearer string'
+curl --location --request DELETE '[host]:[port]/users/{id}' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response
@@ -368,8 +368,8 @@ Send an email with verification code to user. To be able to create a material re
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/users/{id}/verify' \
---header 'Authorization: Bearer string'
+curl --location '[host]:[port]/users/{id}/verify' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response
@@ -392,8 +392,8 @@ Verify the user by sending a verification code which has been sent previously fr
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/users/{id}/verify' \
---header 'Authorization: Bearer string' \
+curl --location '[host]:[port]/users/{id}/verify' \
+--header 'Authorization: Bearer [token]' \
 --header 'Content-Type: application/json' \
 --data '{
     "code": "string"
@@ -427,8 +427,8 @@ Create a new material type. It requires an administrator privilege. All material
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/material_types' \
---header 'Authorization: Bearer string' \
+curl --location '[host]:[port]/material_types' \
+--header 'Authorization: Bearer [token]' \
 --header 'Content-Type: application/json' \
 --data '{
     "code": "string,required",
@@ -457,8 +457,8 @@ Create a new unit of measure. It requires an administrator privilege. All unit o
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/material_uoms' \
---header 'Authorization: Bearer string' \
+curl --location '[host]:[port]/material_uoms' \
+--header 'Authorization: Bearer [token]' \
 --header 'Content-Type: application/json' \
 --data '{
     "code": "string,required",
@@ -486,8 +486,8 @@ Create a new material group. It requires an administrator privilege. All materia
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/material_groups' \
---header 'Authorization: Bearer string' \
+curl --location '[host]:[port]/material_groups' \
+--header 'Authorization: Bearer [token]' \
 --header 'Content-Type: application/json' \
 --data '{
     "code": "string,required",
@@ -515,8 +515,8 @@ List existing material types with filter, sort criteria and pagination through q
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/material_types?description=string&sortBy=string&isDescending=bool&limit=int&page=int' \
---header 'Authorization: Bearer string'
+curl --location '[host]:[port]/material_types?description=string&sortBy=string&isDescending=bool&limit=int&page=int' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response
@@ -560,8 +560,8 @@ List existing unit of measures with filter, sort criteria and pagination through
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/material_uoms?description=string&sortBy=string&isDescending=bool&limit=int&page=int' \
---header 'Authorization: Bearer string'
+curl --location '[host]:[port]/material_uoms?description=string&sortBy=string&isDescending=bool&limit=int&page=int' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response
@@ -604,8 +604,8 @@ List existing material groups with filter, sort criteria and pagination through 
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/material_groups?description=string&sortBy=string&isDescending=bool&limit=int&page=int' \
---header 'Authorization: Bearer string'
+curl --location '[host]:[port]/material_groups?description=string&sortBy=string&isDescending=bool&limit=int&page=int' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response
@@ -648,8 +648,8 @@ Get material type's detail by code. Get material type's detail is available for 
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/material_types/{code}' \
---header 'Authorization: Bearer string'
+curl --location '[host]:[port]/material_types/{code}' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response
@@ -684,8 +684,8 @@ Get unit of measure's detail by code. Get unit of measure's detail is available 
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/material_uoms/{code}' \
---header 'Authorization: Bearer string'
+curl --location '[host]:[port]/material_uoms/{code}' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response
@@ -719,8 +719,8 @@ Get material group's detail by code. Get material group's detail is available fo
 #### Example request
 
 ```bash
-curl --location '{HOST}:{PORT}/material_groups/{code}' \
---header 'Authorization: Bearer string'
+curl --location '[host]:[port]/material_groups/{code}' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response
@@ -754,8 +754,8 @@ Update an existing material type by code. This is available for administrators o
 #### Example request
 
 ```bash
-curl --location --request PUT '{HOST}:{PORT}/material_types/{code}' \
---header 'Authorization: Bearer string' \
+curl --location --request PUT '[host]:[port]/material_types/{code}' \
+--header 'Authorization: Bearer [token]' \
 --header 'Content-Type: application/json' \
 --data '{
     "description": "string,required",
@@ -783,8 +783,8 @@ Update an existing unit of measure by code. This is available for administrators
 #### Example request
 
 ```bash
-curl --location --request PUT '{HOST}:{PORT}/material_uoms/{code}' \
---header 'Authorization: Bearer string' \
+curl --location --request PUT '[host]:[port]/material_uoms/{code}' \
+--header 'Authorization: Bearer [token]' \
 --header 'Content-Type: application/json' \
 --data '{
     "description": "string,required"
@@ -811,8 +811,8 @@ Update an existing material group by code. This is available for administrators 
 #### Example request
 
 ```bash
-curl --location --request PUT '{HOST}:{PORT}/material_groups/{code}' \
---header 'Authorization: Bearer string' \
+curl --location --request PUT '[host]:[port]/material_groups/{code}' \
+--header 'Authorization: Bearer [token]' \
 --header 'Content-Type: application/json' \
 --data '{
     "description": "string,required"
@@ -839,8 +839,8 @@ Delete an existing material type by code. This is available for administrators o
 #### Example request
 
 ```bash
-curl --location --request DELETE '{HOST}:{PORT}/material_types/{code}' \
---header 'Authorization: Bearer string'
+curl --location --request DELETE '[host]:[port]/material_types/{code}' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response
@@ -863,8 +863,8 @@ Delete an existing unit of measure by code. This is available for administrators
 #### Example request
 
 ```bash
-curl --location --request DELETE '{HOST}:{PORT}/material_uoms/{code}' \
---header 'Authorization: Bearer string'
+curl --location --request DELETE '[host]:[port]/material_uoms/{code}' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response
@@ -887,8 +887,8 @@ Delete an existing material group by code. This is available for administrators 
 #### Example request
 
 ```bash
-curl --location --request DELETE '{HOST}:{PORT}/material_groups/{code}' \
---header 'Authorization: Bearer string'
+curl --location --request DELETE '[host]:[port]/material_groups/{code}' \
+--header 'Authorization: Bearer [token]'
 ```
 
 #### Example response

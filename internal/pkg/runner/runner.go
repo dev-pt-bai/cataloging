@@ -22,6 +22,9 @@ import (
 	mservice "github.com/dev-pt-bai/cataloging/internal/app/materials/service"
 	"github.com/dev-pt-bai/cataloging/internal/app/middleware"
 	phandler "github.com/dev-pt-bai/cataloging/internal/app/ping/handler"
+	rhandler "github.com/dev-pt-bai/cataloging/internal/app/requests/handler"
+	rrepository "github.com/dev-pt-bai/cataloging/internal/app/requests/repository"
+	rservice "github.com/dev-pt-bai/cataloging/internal/app/requests/service"
 	shandler "github.com/dev-pt-bai/cataloging/internal/app/settings/handler"
 	uhandler "github.com/dev-pt-bai/cataloging/internal/app/users/handler"
 	urepository "github.com/dev-pt-bai/cataloging/internal/app/users/repository"
@@ -86,10 +89,15 @@ func (a *App) Start() error {
 		return fmt.Errorf("failed to instantiate asset handler: %w", err)
 	}
 
+	requestRepository := rrepository.New(db)
+	requestService := rservice.New(requestRepository, msGraphClient)
+	requestHandler := rhandler.New(requestService)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ping", pingHandler.Ping)
-	mux.HandleFunc("POST /assets", assetHandler.UploadFile)
-	mux.HandleFunc("DELETE /assets/{id}", assetHandler.DeleteFile)
+	mux.HandleFunc("POST /assets", assetHandler.CreateAsset)
+	mux.HandleFunc("GET /assets/{id}", assetHandler.GetAsset)
+	mux.HandleFunc("DELETE /assets/{id}", assetHandler.DeleteAsset)
 	mux.HandleFunc("GET /settings/msgraph", settingHandler.GetMSGraphAuthCode)
 	mux.HandleFunc("GET /settings/msgraph/auth", settingHandler.ParseMSGraphAuthCode)
 	mux.HandleFunc("POST /login", authHandler.Login)
@@ -116,6 +124,7 @@ func (a *App) Start() error {
 	mux.HandleFunc("GET /material_groups/{code}", materialHandler.GetMaterialGroup)
 	mux.HandleFunc("PUT /material_groups/{code}", materialHandler.UpdateMaterialGroup)
 	mux.HandleFunc("DELETE /material_groups/{code}", materialHandler.DeleteMaterialGroup)
+	mux.HandleFunc("POST /requests", requestHandler.CreateRequst)
 
 	var newHandler http.Handler
 	middlewares := []middleware.MiddlewareFunc{

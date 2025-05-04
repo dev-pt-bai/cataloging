@@ -26,11 +26,11 @@ type MiddlewareFunc func(http.Handler, *configs.Config) http.Handler
 
 func Logger(next http.Handler, _ *configs.Config) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requestID := uuid.New().String()
+		requestID := uuid.NewString()
 		ctx := context.WithValue(r.Context(), RequestIDKey, requestID)
 		r = r.Clone(ctx)
 
-		slog.Info(fmt.Sprintf("received %s %s", r.Method, r.URL.Path), slog.String("requestID", requestID))
+		slog.Info(fmt.Sprintf("%s %s", r.Method, r.URL.Path), slog.String("requestID", requestID))
 
 		next.ServeHTTP(w, r)
 	})
