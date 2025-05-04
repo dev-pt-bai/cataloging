@@ -11,22 +11,22 @@ import (
 )
 
 type Material struct {
-	ID            uuid.UUID      `json:"id"`
-	Number        *string        `json:"number"`
-	Type          MaterialType   `json:"type"`
-	UoM           MaterialUoM    `json:"uom"`
-	Plant         Plant          `json:"plant"`
-	Manufacturer  *string        `json:"manufacturer"`
-	Group         MaterialGroup  `json:"group"`
-	EquipmentCode *string        `json:"equipmentCode"`
-	ShortText     *string        `json:"shortText"`
-	LongText      string         `json:"longText"`
-	Note          *string        `json:"note"`
-	Attachments   []Asset        `json:"attachments"`
-	Status        MaterialStatus `json:"status"`
-	RequestID     uuid.UUID      `json:"requestID"`
-	CreatedAt     int64          `json:"createdAt"`
-	UpdatedAt     int64          `json:"updatedAt"`
+	ID            uuid.UUID     `json:"id"`
+	Number        *string       `json:"number"`
+	Plant         Plant         `json:"plant"`
+	Type          MaterialType  `json:"type"`
+	UoM           MaterialUoM   `json:"uom"`
+	Manufacturer  *string       `json:"manufacturer"`
+	Group         MaterialGroup `json:"group"`
+	EquipmentCode *string       `json:"equipmentCode"`
+	ShortText     *string       `json:"shortText"`
+	LongText      string        `json:"longText"`
+	Note          *string       `json:"note"`
+	Status        Status        `json:"status"`
+	RequestID     uuid.UUID     `json:"requestID"`
+	CreatedAt     int64         `json:"createdAt"`
+	UpdatedAt     int64         `json:"updatedAt"`
+	Attachments   []Asset       `json:"attachments"`
 }
 
 type Plant struct {
@@ -202,8 +202,6 @@ func (mgs *MaterialGroups) Response(page Page) map[string]any {
 	}
 }
 
-type MaterialStatus string
-
 type Asset struct {
 	ID          string  `json:"id"`
 	Name        string  `json:"name"`
@@ -214,6 +212,66 @@ type Asset struct {
 	MaterialID  *string `json:"materialID"`
 	CreatedAt   int64   `json:"createdAt"`
 	UpdatedAt   int64   `json:"updatedAt"`
+}
+
+type UpsertMaterialRequest struct {
+	Number        *string  `json:"number"`
+	Plant         string   `json:"plant"`
+	Type          string   `json:"type"`
+	UoM           string   `json:"uom"`
+	Manufacturer  *string  `json:"manufacturer"`
+	Group         string   `json:"group"`
+	EquipmentCode *string  `json:"equipmentCode"`
+	ShortText     *string  `json:"shortText"`
+	LongText      string   `json:"longText"`
+	Note          *string  `json:"note"`
+	Attachments   []string `json:"attachments"`
+}
+
+func (r UpsertMaterialRequest) Validate(isNew bool) error {
+	messages := make([]string, 0, 5)
+
+	if isNew && r.Number != nil {
+		messages = append(messages, "material number should be empty for a new request")
+	}
+
+	if !isNew && (r.Number == nil || len(*r.Number) == 0) {
+		messages = append(messages, "material number is required for a revision request")
+	}
+
+	if len(r.Plant) == 0 {
+		messages = append(messages, "material plant is required")
+	}
+
+	if len(r.Type) == 0 {
+		messages = append(messages, "material type is required")
+	}
+
+	if len(r.UoM) == 0 {
+		messages = append(messages, "material uom is required")
+	}
+
+	if len(r.Group) == 0 {
+		messages = append(messages, "material group is required")
+	}
+
+	if len(r.LongText) == 0 {
+		messages = append(messages, "material long text is required")
+	}
+
+	if len(r.Attachments) == 0 {
+		messages = append(messages, "material attachments are required")
+	}
+
+	if len(r.Attachments) > 2 {
+		messages = append(messages, "maximum number of attachments is two")
+	}
+
+	if len(messages) > 0 {
+		return errors.New(strings.Join(messages, ", "))
+	}
+
+	return nil
 }
 
 type UpsertMaterialTypeRequest struct {

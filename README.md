@@ -70,7 +70,7 @@ To create new migration scripts, see the [migrations guideline](docs/MIGRATIONS.
 go run cmd/app/main.go
 ```
 
-The application will start at `http://{HOST}:{PORT}`
+The application will start at `http://[host]:[port]`
 
 ## Usage
 
@@ -88,7 +88,7 @@ You can use tools like [Postman](https://www.postman.com/) or `curl` to interact
 
 Example `curl` command:
 ```bash
-curl -X GET http://{HOST}:{PORT}/users
+curl -X GET http://[host]:[port]/users
 ```
 
 ### API Endpoints

@@ -17,8 +17,9 @@ import (
 )
 
 type Service interface {
-	UploadFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, createdBy string) *errors.Error
-	DeleteFile(ctx context.Context, itemID string, deletedBy *model.Auth) *errors.Error
+	CreateAsset(ctx context.Context, file multipart.File, header *multipart.FileHeader, createdBy string) (*model.Asset, *errors.Error)
+	GetAsset(ctx context.Context, itemID string) (*model.Asset, *errors.Error)
+	DeleteAsset(ctx context.Context, itemID string, deletedBy *model.Auth) *errors.Error
 }
 
 type Handler struct {
@@ -49,7 +50,7 @@ func New(service Service, config *configs.Config) (*Handler, error) {
 	return h, nil
 }
 
-func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateAsset(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
 
@@ -85,8 +86,9 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.UploadFile(r.Context(), file, header, auth.UserID); err != nil {
-		slog.ErrorContext(r.Context(), errors.New(errors.UploadFileFailure).Wrap(err).Error(), slog.String("requestID", requestID))
+	a, errUpload := h.service.CreateAsset(r.Context(), file, header, auth.UserID)
+	if errUpload != nil {
+		slog.ErrorContext(r.Context(), errors.New(errors.UploadFileFailure).Wrap(errUpload).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": errors.UploadFileFailure.String(),
@@ -96,13 +98,37 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(a)
 }
 
-func (h *Handler) DeleteFile(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAsset(w http.ResponseWriter, r *http.Request) {
+	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+
+	a, err := h.service.GetAsset(r.Context(), r.PathValue("id"))
+	if err != nil {
+		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		switch {
+		case err.ContainsCodes(errors.AssetNotFound):
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": err.Code(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(a)
+}
+
+func (h *Handler) DeleteAsset(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
 
-	if err := h.service.DeleteFile(r.Context(), r.PathValue("id"), auth); err != nil {
+	if err := h.service.DeleteAsset(r.Context(), r.PathValue("id"), auth); err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.DeleteFileFailure).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(map[string]string{
