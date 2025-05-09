@@ -8,6 +8,7 @@ type Auth struct {
 	ExpiredAt      int64  `json:"expiredAt"`
 	IsRefreshToken bool   `json:"-"`
 	UserID         string `json:"-"`
+	UserEmail      string `json:"-"`
 	IsAdmin        Flag   `json:"-"`
 	IsVerified     Flag   `json:"-"`
 }
@@ -15,6 +16,7 @@ type Auth struct {
 func (a Auth) MapClaims(isRefreshToken bool) jwt.MapClaims {
 	m := jwt.MapClaims{
 		"userID":    a.UserID,
+		"userEmail": a.UserEmail,
 		"expiredAt": a.ExpiredAt,
 	}
 

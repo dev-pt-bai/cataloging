@@ -86,8 +86,8 @@ type Email struct {
 	Message Message `json:"message"`
 }
 
-func NewTextEmail(subject, content, recipient string) Email {
-	return Email{
+func NewTextEmail(subject, content, recipient string) *Email {
+	return &Email{
 		Message: Message{
 			Subject:      subject,
 			Body:         Body{ContentType: "text", Content: content},

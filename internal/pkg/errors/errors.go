@@ -36,6 +36,7 @@ const (
 	IllegalUseOfRefreshToken     ErrorCode = "403002"
 	IllegalUserOfAccessToken     ErrorCode = "403003"
 	ExpiredOTP                   ErrorCode = "403004"
+	UserIsUnverified             ErrorCode = "404005"
 	UserNotFound                 ErrorCode = "404001"
 	UserOTPNotFound              ErrorCode = "404002"
 	MaterialTypeNotFound         ErrorCode = "404003"

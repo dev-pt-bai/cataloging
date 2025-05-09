@@ -231,7 +231,7 @@ func (c *Client) generateClientAssertion() (string, error) {
 	return assertion.SignedString(c.privateKey)
 }
 
-func (c *Client) SendEmail(ctx context.Context, email model.Email) *errors.Error {
+func (c *Client) SendEmail(ctx context.Context, email *model.Email) *errors.Error {
 	if c.token == nil {
 		return errors.New(errors.InvalidMSGraphToken)
 	}
