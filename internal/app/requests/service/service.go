@@ -5,6 +5,7 @@ import (
 
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
+	"github.com/google/uuid"
 )
 
 type Repository interface {
@@ -12,7 +13,7 @@ type Repository interface {
 }
 
 type MSGraphClient interface {
-	SendEmail(ctx context.Context, email model.Email) *errors.Error
+	SendEmail(ctx context.Context, email *model.Email) *errors.Error
 }
 
 type Service struct {
@@ -25,11 +26,9 @@ func New(repository Repository, msGraphClient MSGraphClient) *Service {
 }
 
 func (s *Service) CreateRequest(ctx context.Context, r model.Request) *errors.Error {
-	if err := s.repository.CreateRequest(ctx, r); err != nil {
-		return err
-	}
+	return s.repository.CreateRequest(ctx, r)
+}
 
-	// TODO: send email
-
-	return nil
+func (s *Service) GetRequest(ctx context.Context, id uuid.UUID) (*model.Request, *errors.Error) {
+	return nil, nil
 }

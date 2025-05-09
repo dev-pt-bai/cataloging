@@ -48,7 +48,7 @@ func (u User) GenerateOTP() (UserOTP, error) {
 	return UserOTP{UserID: u.ID, UserEmail: u.Email, OTP: string(b), ExpiredAt: time.Now().Add(5 * time.Minute).Unix()}, nil
 }
 
-func (o UserOTP) NewVerificationEmail() Email {
+func (o UserOTP) NewVerificationEmail() *Email {
 	expiredAt := time.Unix(o.ExpiredAt, 0).UTC().Add(7 * time.Hour).Format("02 Jan 2006 15:04")
 	return NewTextEmail(
 		"[Cataloging] Verifikasi Email Anda",

@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -22,6 +23,7 @@ type Status int
 
 const (
 	_ Status = iota
+	Draft
 	Processed
 	Rejected
 	Approved
@@ -63,7 +65,7 @@ func (r UpsertRequestRequest) Validate() error {
 	return nil
 }
 
-func (r UpsertRequestRequest) Model(ID *uuid.UUID, status Status, requestedBy string) Request {
+func (r UpsertRequestRequest) Model(ID *uuid.UUID, status Status, requestedBy *Auth) Request {
 	return Request{
 		ID: func(id *uuid.UUID) uuid.UUID {
 			if id == nil {
@@ -78,7 +80,7 @@ func (r UpsertRequestRequest) Model(ID *uuid.UUID, status Status, requestedBy st
 			}
 			return false
 		}(r.IsNew),
-		RequestedBy: User{ID: requestedBy},
+		RequestedBy: User{ID: requestedBy.UserID, Email: requestedBy.UserEmail},
 		Status:      status,
 		Materials: func(umrs []UpsertMaterialRequest) []Material {
 			materials := make([]Material, 0, 5)
@@ -107,5 +109,20 @@ func (r UpsertRequestRequest) Model(ID *uuid.UUID, status Status, requestedBy st
 			}
 			return materials
 		}(r.Materials),
+	}
+}
+
+func (r Request) NewNotificationEmail() *Email {
+	switch r.Status {
+	case Draft:
+		return nil
+	case Processed:
+		return NewTextEmail(
+			"[Cataloging] Permintaan Sedang Diproses",
+			fmt.Sprintf("Permintaan dengan nomor %v berhasil didaftarkan pada sistem dan berstatus sedang dalam proses", r.ID),
+			r.RequestedBy.Email,
+		)
+	default:
+		return nil
 	}
 }

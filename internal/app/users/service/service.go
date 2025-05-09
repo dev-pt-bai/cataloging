@@ -24,7 +24,7 @@ type Repository interface {
 }
 
 type MSGraphClient interface {
-	SendEmail(ctx context.Context, email model.Email) *errors.Error
+	SendEmail(ctx context.Context, email *model.Email) *errors.Error
 }
 
 type Service struct {

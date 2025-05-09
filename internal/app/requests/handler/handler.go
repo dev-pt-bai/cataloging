@@ -25,7 +25,17 @@ func New(service Service) *Handler {
 
 func (h *Handler) CreateRequst(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
+	if !auth.IsVerified {
+		slog.ErrorContext(r.Context(), errors.UserIsUnverified.String(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.UserIsUnverified.String(),
+			"requestID": requestID,
+		})
+		return
+	}
 
 	req := new(model.UpsertRequestRequest)
 	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
@@ -49,7 +59,7 @@ func (h *Handler) CreateRequst(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.CreateRequest(r.Context(), req.Model(nil, model.Processed, auth.UserID)); err != nil {
+	if err := h.service.CreateRequest(r.Context(), req.Model(nil, model.Processed, auth)); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
 		case err.ContainsCodes(errors.UserNotFound, errors.MaterialPropertiesNotFound, errors.AssetNotFound):
