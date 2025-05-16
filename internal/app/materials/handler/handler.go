@@ -19,6 +19,7 @@ type Service interface {
 	CreateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error
 	CreateMaterialUoM(ctx context.Context, uom model.MaterialUoM) *errors.Error
 	CreateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error
+	CreatePlant(ctx context.Context, p model.Plant) *errors.Error
 	ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) (*model.MaterialTypes, *errors.Error)
 	ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) (*model.MaterialUoMs, *errors.Error)
 	ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) (*model.MaterialGroups, *errors.Error)
@@ -189,6 +190,60 @@ func (h *Handler) CreateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
 		case err.ContainsCodes(errors.MaterialGroupAlreadyExists):
+			w.WriteHeader(http.StatusConflict)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": err.Code(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *Handler) CreatePlant(w http.ResponseWriter, r *http.Request) {
+	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+
+	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
+	if !auth.IsAdmin {
+		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	req := new(model.UpsertPlantRequest)
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.JSONDecodeFailure.String(),
+			"requestID": requestID,
+		})
+		return
+	}
+	defer r.Body.Close()
+
+	if err := req.Validate(); err != nil {
+		slog.ErrorContext(r.Context(), errors.New(errors.JSONValidationFailure).Wrap(err).Error(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.JSONValidationFailure.String(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	if err := h.service.CreatePlant(r.Context(), req.Model()); err != nil {
+		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		switch {
+		case err.ContainsCodes(errors.PlantAlreadyExists):
 			w.WriteHeader(http.StatusConflict)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)

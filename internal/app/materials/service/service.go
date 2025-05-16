@@ -11,6 +11,7 @@ type Repository interface {
 	CreateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error
 	CreateMaterialUoM(ctx context.Context, uom model.MaterialUoM) *errors.Error
 	CreateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error
+	CreatePlant(ctx context.Context, p model.Plant) *errors.Error
 	ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) (*model.MaterialTypes, *errors.Error)
 	ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) (*model.MaterialUoMs, *errors.Error)
 	ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) (*model.MaterialGroups, *errors.Error)
@@ -43,6 +44,10 @@ func (s *Service) CreateMaterialUoM(ctx context.Context, uom model.MaterialUoM) 
 
 func (s *Service) CreateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error {
 	return s.repository.CreateMaterialGroup(ctx, mg)
+}
+
+func (s *Service) CreatePlant(ctx context.Context, p model.Plant) *errors.Error {
+	return s.repository.CreatePlant(ctx, p)
 }
 
 func (s *Service) ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) (*model.MaterialTypes, *errors.Error) {
