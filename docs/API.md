@@ -486,6 +486,35 @@ Create a new material group. It requires an administrator privilege. All materia
 #### Example request
 
 ```bash
+curl --location '[host]:[port]/plants' \
+--header 'Authorization: Bearer [token]' \
+--header 'Content-Type: application/json' \
+--data '{
+    "code": "string,required",
+    "description": "string,required"
+}'
+```
+
+#### Example response
+
+- 204
+
+- 400, 401, 403, 409, 500
+
+```json
+{
+    "errorCode": "string",
+    "requestID": "string"
+}
+```
+
+### POST /plants
+
+Create a new plants. It requires an administrator privilege. All plants should be in accordance with SAP Material Management Module Blueprint.
+
+#### Example request
+
+```bash
 curl --location '[host]:[port]/material_groups' \
 --header 'Authorization: Bearer [token]' \
 --header 'Content-Type: application/json' \

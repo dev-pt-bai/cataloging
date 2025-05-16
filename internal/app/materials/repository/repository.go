@@ -30,6 +30,10 @@ const CreateMaterialGroupQuery = `
 INSERT INTO material_groups (code, description)
 	VALUES (?, ?)`
 
+const CreatePlantQuery = `
+INSERT INTO plants (code, description)
+	VALUES (?, ?)`
+
 const ListMaterialTypeQuery = `
 WITH
 	cte1 AS (SELECT JSON_OBJECT('code', code, 'description', description, 'valuationClass', val_class, 'createdAt', created_at, 'updatedAt', updated_at) AS record FROM material_types `
@@ -107,6 +111,18 @@ func (r *Repository) CreateMaterialUoM(ctx context.Context, uom model.MaterialUo
 
 func (r *Repository) CreateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error {
 	_, err := r.db.ExecContext(ctx, CreateMaterialGroupQuery, mg.Code, mg.Description)
+	if err != nil {
+		if errors.HasMySQLErrCode(err, 1062) {
+			return errors.New(errors.MaterialGroupAlreadyExists).Wrap(err)
+		}
+		return errors.New(errors.RunQueryFailure).Wrap(err)
+	}
+
+	return nil
+}
+
+func (r *Repository) CreatePlant(ctx context.Context, p model.Plant) *errors.Error {
+	_, err := r.db.ExecContext(ctx, CreatePlantQuery, p.Code, p.Description)
 	if err != nil {
 		if errors.HasMySQLErrCode(err, 1062) {
 			return errors.New(errors.MaterialGroupAlreadyExists).Wrap(err)

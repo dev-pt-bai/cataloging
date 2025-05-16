@@ -390,6 +390,44 @@ func (r UpsertMaterialGroupRequest) Model() MaterialGroup {
 	}
 }
 
+type UpsertPlantRequest struct {
+	Code        string `json:"code"`
+	Description string `json:"description"`
+}
+
+func (r UpsertPlantRequest) Validate() error {
+	messages := make([]string, 0, 5)
+
+	if len(r.Code) == 0 {
+		messages = append(messages, "plant's code is required")
+	}
+
+	if len(r.Code) > 250 {
+		messages = append(messages, "plant's code is too long")
+	}
+
+	if len(r.Description) == 0 {
+		messages = append(messages, "plant's description is required")
+	}
+
+	if len(r.Description) > 1000 {
+		messages = append(messages, "plant's description is too long")
+	}
+
+	if len(messages) > 0 {
+		return errors.New(strings.Join(messages, ","))
+	}
+
+	return nil
+}
+
+func (r UpsertPlantRequest) Model() Plant {
+	return Plant{
+		Code:        r.Code,
+		Description: r.Description,
+	}
+}
+
 type ListMaterialTypesCriteria struct {
 	FilterMaterialType
 	Sort
