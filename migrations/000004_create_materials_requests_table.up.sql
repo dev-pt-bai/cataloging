@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS requests (
     subject      VARCHAR(255) NOT NULL,
     is_new       TINYINT(1)   NOT NULL,
     requested_by VARCHAR(255) NOT NULL,
-    status       VARCHAR(255) NOT NULL,
+    status       TINYINT      NOT NULL,
     created_at   INT UNSIGNED DEFAULT (UNIX_TIMESTAMP()),
     updated_at   INT UNSIGNED DEFAULT (UNIX_TIMESTAMP()),
     deleted_at   INT UNSIGNED DEFAULT 0,
@@ -29,15 +29,15 @@ CREATE TABLE IF NOT EXISTS materials (
     id             VARCHAR(255)  NOT NULL,
     number         VARCHAR(255),
     plant_code     VARCHAR(255)  NOT NULL,
-    type           VARCHAR(255)  NOT NULL,
-    uom            VARCHAR(255)  NOT NULL,
+    type_code      VARCHAR(255)  NOT NULL,
+    uom_code       VARCHAR(255)  NOT NULL,
     group_code     VARCHAR(255)  NOT NULL,
     equipment_code VARCHAR(255),
     manufacturer   VARCHAR(255),
     short_text     VARCHAR(255),
     long_text      VARCHAR(1023) NOT NULL,
     note           VARCHAR(1023),
-    status         VARCHAR(255)  NOT NULL,
+    status         TINYINT       NOT NULL,
     request_id     VARCHAR(255)  NOT NULL,
     created_at     INT UNSIGNED  DEFAULT (UNIX_TIMESTAMP()),
     updated_at     INT UNSIGNED  DEFAULT (UNIX_TIMESTAMP()),
@@ -61,6 +61,8 @@ CREATE TABLE IF NOT EXISTS assets (
 
     PRIMARY KEY (id)
 );
+
+CREATE INDEX asset_material_idx ON assets (material_id); 
 
 COMMIT;
 
