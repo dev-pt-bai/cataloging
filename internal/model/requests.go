@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -19,10 +20,23 @@ type Request struct {
 	Materials   []Material `json:"materials"`
 }
 
+func (r *Request) Scan(src any) error {
+	if src == nil {
+		return nil
+	}
+
+	b, ok := src.([]byte)
+	if !ok {
+		return fmt.Errorf("failed to convert src of type [%T] to []byte", src)
+	}
+
+	return json.Unmarshal(b, r)
+}
+
 type Status int
 
 const (
-	_ Status = iota
+	Unknown Status = iota
 	Draft
 	Processed
 	Rejected
@@ -30,6 +44,28 @@ const (
 	Published
 	Deprecated
 )
+
+func (s Status) MarshalJSON() ([]byte, error) {
+	var status string
+	switch s {
+	default:
+		status = "Unknown"
+	case Draft:
+		status = "Draft"
+	case Processed:
+		status = "Processed"
+	case Rejected:
+		status = "Rejected"
+	case Approved:
+		status = "Approved"
+	case Published:
+		status = "Published"
+	case Deprecated:
+		status = "Deprecated"
+	}
+
+	return json.Marshal(status)
+}
 
 type UpsertRequestRequest struct {
 	Subject   string                  `json:"subject"`
