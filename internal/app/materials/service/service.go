@@ -23,6 +23,7 @@ type Repository interface {
 	UpdateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error
 	UpdateMaterialUoM(ctx context.Context, uom model.MaterialUoM) *errors.Error
 	UpdateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error
+	UpdatePlant(ctx context.Context, p model.Plant) *errors.Error
 	DeleteMaterialType(ctx context.Context, code string) *errors.Error
 	DeleteMaterialUoM(ctx context.Context, code string) *errors.Error
 	DeleteMaterialGroup(ctx context.Context, code string) *errors.Error
@@ -94,6 +95,10 @@ func (s *Service) UpdateMaterialUoM(ctx context.Context, uom model.MaterialUoM) 
 
 func (s *Service) UpdateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error {
 	return s.repository.UpdateMaterialGroup(ctx, mg)
+}
+
+func (s *Service) UpdatePlant(ctx context.Context, p model.Plant) *errors.Error {
+	return s.repository.UpdatePlant(ctx, p)
 }
 
 func (s *Service) DeleteMaterialType(ctx context.Context, code string) *errors.Error {

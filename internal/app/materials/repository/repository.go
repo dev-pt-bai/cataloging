@@ -82,6 +82,10 @@ const UpdateMaterialGroupQuery = `
 UPDATE material_groups SET description = ?, updated_at = (UNIX_TIMESTAMP())
 	WHERE code = ? AND deleted_at = 0`
 
+const UpdatePlantQuery = `
+	UPDATE plants SET description = ?, updated_at = (UNIX_TIMESTAMP())
+		WHERE code = ? AND deleted_at = 0`
+
 const DeleteMaterialTypeQuery = `
 UPDATE material_types SET deleted_at = (UNIX_TIMESTAMP())
 	WHERE code = ?`
@@ -473,6 +477,24 @@ func (r *Repository) UpdateMaterialGroup(ctx context.Context, mg model.MaterialG
 
 	if row < 1 {
 		return errors.New(errors.MaterialGroupNotFound)
+	}
+
+	return nil
+}
+
+func (r *Repository) UpdatePlant(ctx context.Context, p model.Plant) *errors.Error {
+	res, err := r.db.ExecContext(ctx, UpdatePlantQuery, p.Description, p.Code)
+	if err != nil {
+		return errors.New(errors.RunQueryFailure).Wrap(err)
+	}
+
+	row, err := res.RowsAffected()
+	if err != nil {
+		return errors.New(errors.RowsAffectedFailure).Wrap(err)
+	}
+
+	if row < 1 {
+		return errors.New(errors.PlantNotFound)
 	}
 
 	return nil
