@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"net/mail"
 	"regexp"
 	"strings"
@@ -80,28 +79,9 @@ func (u *Users) Response(page Page) map[string]any {
 		return nil
 	}
 
-	totalPages := int64(math.Ceil(float64(u.Count) / float64(page.ItemPerPage)))
 	return map[string]any{
 		"data": u.Data,
-		"meta": map[string]any{
-			"totalRecords": u.Count,
-			"totalPages":   totalPages,
-			"currentPage":  page.Number,
-			"previousPage": func(currentPage, totalPages int64) *int64 {
-				if currentPage == 1 || currentPage > totalPages+1 {
-					return nil
-				}
-				currentPage--
-				return &currentPage
-			}(page.Number, totalPages),
-			"nextPage": func(currentPage, totalPages int64) *int64 {
-				if currentPage >= totalPages {
-					return nil
-				}
-				currentPage++
-				return &currentPage
-			}(page.Number, totalPages),
-		},
+		"meta": listMeta(u.Count, page.ItemPerPage, page.Number),
 	}
 }
 
