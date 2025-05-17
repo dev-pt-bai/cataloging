@@ -27,6 +27,7 @@ type Service interface {
 	GetMaterialType(ctx context.Context, code string) (*model.MaterialType, *errors.Error)
 	GetMaterialUoM(ctx context.Context, code string) (*model.MaterialUoM, *errors.Error)
 	GetMaterialGroup(ctx context.Context, code string) (*model.MaterialGroup, *errors.Error)
+	GetPlant(ctx context.Context, code string) (*model.Plant, *errors.Error)
 	UpdateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error
 	UpdateMaterialUoM(ctx context.Context, uom model.MaterialUoM) *errors.Error
 	UpdateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error
@@ -543,7 +544,7 @@ func (h *Handler) GetMaterialUoM(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetMaterialGroup(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
-	uom, err := h.service.GetMaterialGroup(r.Context(), r.PathValue("code"))
+	mg, err := h.service.GetMaterialGroup(r.Context(), r.PathValue("code"))
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
@@ -561,7 +562,32 @@ func (h *Handler) GetMaterialGroup(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{
-		"data": uom,
+		"data": mg,
+	})
+}
+
+func (h *Handler) GetPlant(w http.ResponseWriter, r *http.Request) {
+	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+
+	p, err := h.service.GetPlant(r.Context(), r.PathValue("code"))
+	if err != nil {
+		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		switch {
+		case err.ContainsCodes(errors.PlantNotFound):
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": err.Code(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]any{
+		"data": p,
 	})
 }
 
