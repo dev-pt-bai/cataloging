@@ -19,6 +19,7 @@ type Repository interface {
 	GetMaterialType(ctx context.Context, code string) (*model.MaterialType, *errors.Error)
 	GetMaterialUoM(ctx context.Context, code string) (*model.MaterialUoM, *errors.Error)
 	GetMaterialGroup(ctx context.Context, code string) (*model.MaterialGroup, *errors.Error)
+	GetPlant(ctx context.Context, code string) (*model.Plant, *errors.Error)
 	UpdateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error
 	UpdateMaterialUoM(ctx context.Context, uom model.MaterialUoM) *errors.Error
 	UpdateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error
@@ -77,6 +78,10 @@ func (s *Service) GetMaterialUoM(ctx context.Context, code string) (*model.Mater
 
 func (s *Service) GetMaterialGroup(ctx context.Context, code string) (*model.MaterialGroup, *errors.Error) {
 	return s.repository.GetMaterialGroup(ctx, code)
+}
+
+func (s *Service) GetPlant(ctx context.Context, code string) (*model.Plant, *errors.Error) {
+	return s.repository.GetPlant(ctx, code)
 }
 
 func (s *Service) UpdateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error {

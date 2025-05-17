@@ -45,6 +45,7 @@ const (
 	MaterialPropertiesNotFound   ErrorCode = "404006"
 	AssetNotFound                ErrorCode = "404007"
 	RequestNotFound              ErrorCode = "404008"
+	PlantNotFound                ErrorCode = "404009"
 	UserAlreadyExists            ErrorCode = "409001"
 	UserOTPAlreadyExists         ErrorCode = "409002"
 	UserAlreadyVerified          ErrorCode = "409003"
