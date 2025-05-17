@@ -98,6 +98,10 @@ const DeleteMaterialGroupQuery = `
 UPDATE material_groups SET deleted_at = (UNIX_TIMESTAMP())
 	WHERE code = ?`
 
+const DeletePlantQuery = `
+UPDATE plants SET deleted_at = (UNIX_TIMESTAMP())
+	WHERE code = ?`
+
 func (r *Repository) CreateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error {
 	_, err := r.db.ExecContext(ctx, CreateMaterialTypeQuery, mt.Code, mt.Description, mt.ValuationClass)
 	if err != nil {
@@ -520,6 +524,15 @@ func (r *Repository) DeleteMaterialUoM(ctx context.Context, code string) *errors
 
 func (r *Repository) DeleteMaterialGroup(ctx context.Context, code string) *errors.Error {
 	_, err := r.db.ExecContext(ctx, DeleteMaterialGroupQuery, code)
+	if err != nil {
+		return errors.New(errors.RunQueryFailure).Wrap(err)
+	}
+
+	return nil
+}
+
+func (r *Repository) DeletePlant(ctx context.Context, code string) *errors.Error {
+	_, err := r.db.ExecContext(ctx, DeletePlantQuery, code)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
