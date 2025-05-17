@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"strings"
 
 	"github.com/google/uuid"
@@ -67,28 +66,9 @@ func (mts *MaterialTypes) Response(page Page) map[string]any {
 		return nil
 	}
 
-	totalPages := int64(math.Ceil(float64(mts.Count) / float64(page.ItemPerPage)))
 	return map[string]any{
 		"data": mts.Data,
-		"meta": map[string]any{
-			"totalRecords": mts.Count,
-			"totalPages":   totalPages,
-			"currentPage":  page.Number,
-			"previousPage": func(currentPage, totalPages int64) *int64 {
-				if currentPage == 1 || currentPage > totalPages+1 {
-					return nil
-				}
-				currentPage--
-				return &currentPage
-			}(page.Number, totalPages),
-			"nextPage": func(currentPage, totalPages int64) *int64 {
-				if currentPage >= totalPages {
-					return nil
-				}
-				currentPage++
-				return &currentPage
-			}(page.Number, totalPages),
-		},
+		"meta": listMeta(mts.Count, page.ItemPerPage, page.Number),
 	}
 }
 
@@ -122,28 +102,9 @@ func (uoms *MaterialUoMs) Response(page Page) map[string]any {
 		return nil
 	}
 
-	totalPages := int64(math.Ceil(float64(uoms.Count) / float64(page.ItemPerPage)))
 	return map[string]any{
 		"data": uoms.Data,
-		"meta": map[string]any{
-			"totalRecords": uoms.Count,
-			"totalPages":   totalPages,
-			"currentPage":  page.Number,
-			"previousPage": func(currentPage, totalPages int64) *int64 {
-				if currentPage == 1 || currentPage > totalPages+1 {
-					return nil
-				}
-				currentPage--
-				return &currentPage
-			}(page.Number, totalPages),
-			"nextPage": func(currentPage, totalPages int64) *int64 {
-				if currentPage >= totalPages {
-					return nil
-				}
-				currentPage++
-				return &currentPage
-			}(page.Number, totalPages),
-		},
+		"meta": listMeta(uoms.Count, page.ItemPerPage, page.Number),
 	}
 }
 
@@ -177,28 +138,38 @@ func (mgs *MaterialGroups) Response(page Page) map[string]any {
 		return nil
 	}
 
-	totalPages := int64(math.Ceil(float64(mgs.Count) / float64(page.ItemPerPage)))
 	return map[string]any{
 		"data": mgs.Data,
-		"meta": map[string]any{
-			"totalRecords": mgs.Count,
-			"totalPages":   totalPages,
-			"currentPage":  page.Number,
-			"previousPage": func(currentPage, totalPages int64) *int64 {
-				if currentPage == 1 || currentPage > totalPages+1 {
-					return nil
-				}
-				currentPage--
-				return &currentPage
-			}(page.Number, totalPages),
-			"nextPage": func(currentPage, totalPages int64) *int64 {
-				if currentPage >= totalPages {
-					return nil
-				}
-				currentPage++
-				return &currentPage
-			}(page.Number, totalPages),
-		},
+		"meta": listMeta(mgs.Count, page.ItemPerPage, page.Number),
+	}
+}
+
+type Plants struct {
+	Data  []*Plant `json:"data"`
+	Count int64    `json:"count"`
+}
+
+func (p *Plants) Scan(src any) error {
+	if src == nil {
+		return nil
+	}
+
+	b, ok := src.([]byte)
+	if !ok {
+		return fmt.Errorf("failed to convert src of type [%T] to []byte", src)
+	}
+
+	return json.Unmarshal(b, p)
+}
+
+func (p *Plants) Response(page Page) map[string]any {
+	if p == nil {
+		return nil
+	}
+
+	return map[string]any{
+		"data": p.Data,
+		"meta": listMeta(p.Count, page.ItemPerPage, page.Number),
 	}
 }
 
@@ -455,5 +426,15 @@ type ListMaterialGroupsCriteria struct {
 }
 
 type FilterMaterialGroup struct {
+	Description string
+}
+
+type ListPlantsCriteria struct {
+	FilterPlant
+	Sort
+	Page
+}
+
+type FilterPlant struct {
 	Description string
 }

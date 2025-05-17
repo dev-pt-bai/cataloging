@@ -46,6 +46,10 @@ const ListMaterialGroupQuery = `
 WITH
 	cte1 AS (SELECT JSON_OBJECT('code', code, 'description', description, 'createdAt', created_at, 'updatedAt', updated_at) AS record FROM material_groups `
 
+const ListPlantQuery = `
+WITH
+	cte1 AS (SELECT JSON_OBJECT('code', code, 'description', description, 'createdAt', created_at, 'updatedAt', updated_at) AS record FROM plants `
+
 const GetMaterialTypeQuery = `
 SELECT code, description, val_class, created_at, updated_at
 	FROM material_types
@@ -178,6 +182,21 @@ func (r *Repository) ListMaterialGroups(ctx context.Context, criteria model.List
 	return mgs, nil
 }
 
+func (r *Repository) ListPlants(ctx context.Context, criteria model.ListPlantsCriteria) (*model.Plants, *errors.Error) {
+	query, args, err := r.buildListPlantsQuery(criteria)
+	if err != nil {
+		return nil, errors.New(errors.BuildQueryFailure).Wrap(err)
+	}
+
+	p := new(model.Plants)
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(&p)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, errors.New(errors.RunQueryFailure).Wrap(err)
+	}
+
+	return p, nil
+}
+
 type listParam struct {
 	q    strings.Builder
 	args []any
@@ -262,6 +281,36 @@ func (r *Repository) buildListMaterialGroupsQuery(criteria model.ListMaterialGro
 }
 
 func (r *Repository) filterMaterialGroup(filter model.FilterMaterialGroup, param *listParam) {
+	whereClauses := make([]string, 0, 5)
+	whereClauses = append(whereClauses, "deleted_at = 0 ")
+
+	if len(filter.Description) != 0 {
+		whereClauses = append(whereClauses, "description LIKE ? ")
+		param.args = append(param.args, fmt.Sprintf("%%%s%%", filter.Description))
+	}
+
+	param.q.WriteString(fmt.Sprintf("WHERE %s ", strings.Join(whereClauses, "AND ")))
+}
+
+func (r *Repository) buildListPlantsQuery(criteria model.ListPlantsCriteria) (string, []any, error) {
+	param := listParam{
+		q:    strings.Builder{},
+		args: make([]any, 0, 5),
+	}
+	param.q.WriteString(ListPlantQuery)
+
+	r.filterPlant(criteria.FilterPlant, &param)
+	if err := r.sort(criteria.Sort, &param, model.IsAvailableToSortPlant); err != nil {
+		return "", nil, err
+	}
+	if err := r.paginate(criteria.Page, &param); err != nil {
+		return "", nil, err
+	}
+
+	return param.q.String(), param.args, nil
+}
+
+func (r *Repository) filterPlant(filter model.FilterPlant, param *listParam) {
 	whereClauses := make([]string, 0, 5)
 	whereClauses = append(whereClauses, "deleted_at = 0 ")
 

@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"math"
 )
 
 type Sort struct {
@@ -64,6 +65,17 @@ func IsAvailableToSortMaterialGroup(fieldName string) bool {
 	return availableToSort
 }
 
+var plantsFieldToSort map[string]struct{} = map[string]struct{}{
+	"code":        {},
+	"description": {},
+}
+
+func IsAvailableToSortPlant(fieldName string) bool {
+	_, availableToSort := plantsFieldToSort[fieldName]
+
+	return availableToSort
+}
+
 type Flag bool
 
 func NewFlag(b bool) *Flag {
@@ -113,4 +125,27 @@ type List struct {
 
 type Meta struct {
 	Page int64 `json:"page"`
+}
+
+func listMeta(count int64, itemPerPage int64, pageNumber int64) map[string]any {
+	totalPages := int64(math.Ceil(float64(count) / float64(itemPerPage)))
+	return map[string]any{
+		"totalRecords": count,
+		"totalPages":   totalPages,
+		"currentPage":  pageNumber,
+		"previousPage": func(currentPage, totalPages int64) *int64 {
+			if currentPage == 1 || currentPage > totalPages+1 {
+				return nil
+			}
+			currentPage--
+			return &currentPage
+		}(pageNumber, totalPages),
+		"nextPage": func(currentPage, totalPages int64) *int64 {
+			if currentPage >= totalPages {
+				return nil
+			}
+			currentPage++
+			return &currentPage
+		}(pageNumber, totalPages),
+	}
 }
