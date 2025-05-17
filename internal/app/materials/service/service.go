@@ -27,6 +27,7 @@ type Repository interface {
 	DeleteMaterialType(ctx context.Context, code string) *errors.Error
 	DeleteMaterialUoM(ctx context.Context, code string) *errors.Error
 	DeleteMaterialGroup(ctx context.Context, code string) *errors.Error
+	DeletePlant(ctx context.Context, code string) *errors.Error
 }
 
 type Service struct {
@@ -111,4 +112,8 @@ func (s *Service) DeleteMaterialUoM(ctx context.Context, code string) *errors.Er
 
 func (s *Service) DeleteMaterialGroup(ctx context.Context, code string) *errors.Error {
 	return s.repository.DeleteMaterialGroup(ctx, code)
+}
+
+func (s *Service) DeletePlant(ctx context.Context, code string) *errors.Error {
+	return s.repository.DeletePlant(ctx, code)
 }
