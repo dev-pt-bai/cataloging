@@ -183,6 +183,36 @@ func (r *Repository) CreateManufacturer(ctx context.Context, m model.Manufacture
 	return nil
 }
 
+func (r *Repository) BulkCreateManufacturer(ctx context.Context, ms []model.Manufacturer) *errors.Error {
+	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault})
+	if err != nil {
+		return errors.New(errors.StartingTransactionFailure).Wrap(err)
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(ctx, CreateManufacturerQuery)
+	if err != nil {
+
+	}
+	defer stmt.Close()
+
+	for i := range ms {
+		_, err = stmt.ExecContext(ctx, ms[i].Code, ms[i].Description)
+		if err != nil {
+			if errors.HasMySQLErrCode(err, 1062) {
+				return errors.New(errors.ManufacturerAlreadyExists).Wrap(err)
+			}
+			return errors.New(errors.RunQueryFailure).Wrap(err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return errors.New(errors.CommittingTransactionFailure).Wrap(err)
+	}
+
+	return nil
+}
+
 func (r *Repository) ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) (*model.MaterialTypes, *errors.Error) {
 	query, args, err := r.buildListMaterialTypesQuery(criteria)
 	if err != nil {
