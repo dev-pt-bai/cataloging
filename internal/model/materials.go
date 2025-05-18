@@ -187,6 +187,35 @@ func (m *Manufacturer) SafeCode() *string {
 	return &m.Code
 }
 
+type Manufacturers struct {
+	Data  []*Manufacturer `json:"data"`
+	Count int64           `json:"count"`
+}
+
+func (m *Manufacturers) Scan(src any) error {
+	if src == nil {
+		return nil
+	}
+
+	b, ok := src.([]byte)
+	if !ok {
+		return fmt.Errorf("failed to convert src of type [%T] to []byte", src)
+	}
+
+	return json.Unmarshal(b, m)
+}
+
+func (m *Manufacturers) Response(page Page) map[string]any {
+	if m == nil {
+		return nil
+	}
+
+	return map[string]any{
+		"data": m.Data,
+		"meta": listMeta(m.Count, page.ItemPerPage, page.Number),
+	}
+}
+
 type Asset struct {
 	ID          string  `json:"id"`
 	Name        string  `json:"name"`
@@ -488,5 +517,15 @@ type ListPlantsCriteria struct {
 }
 
 type FilterPlant struct {
+	Description string
+}
+
+type ListManufacturersCriteria struct {
+	FilterManufacturer
+	Sort
+	Page
+}
+
+type FilterManufacturer struct {
 	Description string
 }
