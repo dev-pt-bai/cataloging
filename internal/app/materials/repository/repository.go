@@ -34,6 +34,10 @@ const CreatePlantQuery = `
 INSERT INTO plants (code, description)
 	VALUES (?, ?)`
 
+const CreateManufacturerQuery = `
+INSERT INTO manufacturers (code, description)
+	VALUES (?, ?)`
+
 const ListMaterialTypeQuery = `
 WITH
 	cte1 AS (SELECT JSON_OBJECT('code', code, 'description', description, 'valuationClass', val_class, 'createdAt', created_at, 'updatedAt', updated_at) AS record FROM material_types `
@@ -143,6 +147,18 @@ func (r *Repository) CreatePlant(ctx context.Context, p model.Plant) *errors.Err
 	if err != nil {
 		if errors.HasMySQLErrCode(err, 1062) {
 			return errors.New(errors.MaterialGroupAlreadyExists).Wrap(err)
+		}
+		return errors.New(errors.RunQueryFailure).Wrap(err)
+	}
+
+	return nil
+}
+
+func (r *Repository) CreateManufacturer(ctx context.Context, m model.Manufacturer) *errors.Error {
+	_, err := r.db.ExecContext(ctx, CreateManufacturerQuery, m.Code, m.Description)
+	if err != nil {
+		if errors.HasMySQLErrCode(err, 1062) {
+			return errors.New(errors.ManufacturerAlreadyExists).Wrap(err)
 		}
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}
