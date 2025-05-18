@@ -3,6 +3,7 @@ module github.com/dev-pt-bai/cataloging
 go 1.24
 
 require (
+	github.com/eapache/go-resiliency v1.7.0
 	github.com/go-sql-driver/mysql v1.9.2
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang-migrate/migrate/v4 v4.18.2

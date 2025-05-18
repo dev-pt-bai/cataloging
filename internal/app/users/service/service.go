@@ -9,6 +9,7 @@ import (
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/auth"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
+	"github.com/eapache/go-resiliency/retrier"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -85,8 +86,11 @@ func (s *Service) SendVerificationEmail(ctx context.Context, userID string) *err
 		return err
 	}
 
-	if err := s.msGraphClient.SendEmail(ctx, otp.NewVerificationEmail()); err != nil {
-		return err
+	retrier := retrier.New(retrier.ConstantBackoff(3, 100*time.Millisecond), nil)
+	if err := retrier.RunCtx(ctx, func(ctx context.Context) error {
+		return s.msGraphClient.SendEmail(ctx, otp.NewVerificationEmail())
+	}); err != nil {
+		return nil
 	}
 
 	return nil
