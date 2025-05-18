@@ -122,12 +122,17 @@ func (r UpsertRequestRequest) Model(ID *uuid.UUID, status Status, requestedBy *A
 			materials := make([]Material, 0, 5)
 			for i := range umrs {
 				materials = append(materials, Material{
-					ID:            uuid.New(),
-					Plant:         Plant{Code: umrs[i].Plant},
-					Number:        umrs[i].Number,
-					Type:          MaterialType{Code: umrs[i].Type},
-					UoM:           MaterialUoM{Code: umrs[i].UoM},
-					Manufacturer:  umrs[i].Manufacturer,
+					ID:     uuid.New(),
+					Plant:  Plant{Code: umrs[i].Plant},
+					Number: umrs[i].Number,
+					Type:   MaterialType{Code: umrs[i].Type},
+					UoM:    MaterialUoM{Code: umrs[i].UoM},
+					Manufacturer: func(code *string) *Manufacturer {
+						if code == nil {
+							return nil
+						}
+						return &Manufacturer{Code: *code}
+					}(umrs[i].Manufacturer),
 					Group:         MaterialGroup{Code: umrs[i].Group},
 					EquipmentCode: umrs[i].EquipmentCode,
 					ShortText:     umrs[i].ShortText,

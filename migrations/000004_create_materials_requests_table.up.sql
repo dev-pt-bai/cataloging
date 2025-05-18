@@ -25,23 +25,33 @@ CREATE TABLE IF NOT EXISTS plants (
     PRIMARY KEY (code, deleted_at)
 );
 
+CREATE TABLE IF NOT EXISTS manufacturers (
+    code        VARCHAR(255)  NOT NULL,
+    description VARCHAR(1023) NOT NULL,
+    created_at  INT UNSIGNED  DEFAULT (UNIX_TIMESTAMP()),
+    updated_at  INT UNSIGNED  DEFAULT (UNIX_TIMESTAMP()),
+    deleted_at  INT UNSIGNED  DEFAULT 0,
+
+    PRIMARY KEY (code, deleted_at)
+);
+
 CREATE TABLE IF NOT EXISTS materials (
-    id             VARCHAR(255)  NOT NULL,
-    number         VARCHAR(255),
-    plant_code     VARCHAR(255)  NOT NULL,
-    type_code      VARCHAR(255)  NOT NULL,
-    uom_code       VARCHAR(255)  NOT NULL,
-    group_code     VARCHAR(255)  NOT NULL,
-    equipment_code VARCHAR(255),
-    manufacturer   VARCHAR(255),
-    short_text     VARCHAR(255),
-    long_text      VARCHAR(1023) NOT NULL,
-    note           VARCHAR(1023),
-    status         TINYINT       NOT NULL,
-    request_id     VARCHAR(255)  NOT NULL,
-    created_at     INT UNSIGNED  DEFAULT (UNIX_TIMESTAMP()),
-    updated_at     INT UNSIGNED  DEFAULT (UNIX_TIMESTAMP()),
-    deleted_at     INT UNSIGNED  DEFAULT 0,
+    id                VARCHAR(255)  NOT NULL,
+    number            VARCHAR(255),
+    plant_code        VARCHAR(255)  NOT NULL,
+    type_code         VARCHAR(255)  NOT NULL,
+    uom_code          VARCHAR(255)  NOT NULL,
+    group_code        VARCHAR(255)  NOT NULL,
+    equipment_code    VARCHAR(255),
+    manufacturer_code VARCHAR(255),
+    short_text        VARCHAR(255),
+    long_text         VARCHAR(1023) NOT NULL,
+    note              VARCHAR(1023),
+    status            TINYINT       NOT NULL,
+    request_id        VARCHAR(255)  NOT NULL,
+    created_at        INT UNSIGNED  DEFAULT (UNIX_TIMESTAMP()),
+    updated_at        INT UNSIGNED  DEFAULT (UNIX_TIMESTAMP()),
+    deleted_at        INT UNSIGNED  DEFAULT 0,
 
     PRIMARY KEY (id),
     FOREIGN KEY (request_id) REFERENCES requests (id)

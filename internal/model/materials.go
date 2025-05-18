@@ -15,7 +15,7 @@ type Material struct {
 	Plant         Plant         `json:"plant"`
 	Type          MaterialType  `json:"type"`
 	UoM           MaterialUoM   `json:"uom"`
-	Manufacturer  *string       `json:"manufacturer"`
+	Manufacturer  *Manufacturer `json:"manufacturer"`
 	Group         MaterialGroup `json:"group"`
 	EquipmentCode *string       `json:"equipmentCode"`
 	ShortText     *string       `json:"shortText"`
@@ -33,6 +33,35 @@ type Plant struct {
 	Description string `json:"description"`
 	CreatedAt   int64  `json:"createdAt"`
 	UpdatedAt   int64  `json:"updatedAt"`
+}
+
+type Plants struct {
+	Data  []*Plant `json:"data"`
+	Count int64    `json:"count"`
+}
+
+func (p *Plants) Scan(src any) error {
+	if src == nil {
+		return nil
+	}
+
+	b, ok := src.([]byte)
+	if !ok {
+		return fmt.Errorf("failed to convert src of type [%T] to []byte", src)
+	}
+
+	return json.Unmarshal(b, p)
+}
+
+func (p *Plants) Response(page Page) map[string]any {
+	if p == nil {
+		return nil
+	}
+
+	return map[string]any{
+		"data": p.Data,
+		"meta": listMeta(p.Count, page.ItemPerPage, page.Number),
+	}
 }
 
 type MaterialType struct {
@@ -144,33 +173,18 @@ func (mgs *MaterialGroups) Response(page Page) map[string]any {
 	}
 }
 
-type Plants struct {
-	Data  []*Plant `json:"data"`
-	Count int64    `json:"count"`
+type Manufacturer struct {
+	Code        string `json:"code"`
+	Description string `json:"description"`
+	CreatedAt   int64  `json:"createdAt"`
+	UpdatedAt   int64  `json:"updatedAt"`
 }
 
-func (p *Plants) Scan(src any) error {
-	if src == nil {
+func (m *Manufacturer) SafeCode() *string {
+	if m == nil {
 		return nil
 	}
-
-	b, ok := src.([]byte)
-	if !ok {
-		return fmt.Errorf("failed to convert src of type [%T] to []byte", src)
-	}
-
-	return json.Unmarshal(b, p)
-}
-
-func (p *Plants) Response(page Page) map[string]any {
-	if p == nil {
-		return nil
-	}
-
-	return map[string]any{
-		"data": p.Data,
-		"meta": listMeta(p.Count, page.ItemPerPage, page.Number),
-	}
+	return &m.Code
 }
 
 type Asset struct {
