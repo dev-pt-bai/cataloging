@@ -40,6 +40,7 @@ type Service interface {
 	DeleteMaterialUoM(ctx context.Context, code string) *errors.Error
 	DeleteMaterialGroup(ctx context.Context, code string) *errors.Error
 	DeletePlant(ctx context.Context, code string) *errors.Error
+	DeleteManufacturer(ctx context.Context, code string) *errors.Error
 }
 
 type Handler struct {
@@ -1093,6 +1094,33 @@ func (h *Handler) DeletePlant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.DeletePlant(r.Context(), r.PathValue("code")); err != nil {
+		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": err.Code(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) DeleteManufacturer(w http.ResponseWriter, r *http.Request) {
+	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+
+	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
+	if !auth.IsAdmin {
+		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	if err := h.service.DeleteManufacturer(r.Context(), r.PathValue("code")); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{
