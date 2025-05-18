@@ -35,6 +35,7 @@ type Service interface {
 	UpdateMaterialUoM(ctx context.Context, uom model.MaterialUoM) *errors.Error
 	UpdateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error
 	UpdatePlant(ctx context.Context, p model.Plant) *errors.Error
+	UpdateManufacturer(ctx context.Context, m model.Manufacturer) *errors.Error
 	DeleteMaterialType(ctx context.Context, code string) *errors.Error
 	DeleteMaterialUoM(ctx context.Context, code string) *errors.Error
 	DeleteMaterialGroup(ctx context.Context, code string) *errors.Error
@@ -927,6 +928,61 @@ func (h *Handler) UpdatePlant(w http.ResponseWriter, r *http.Request) {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
 		case err.ContainsCodes(errors.PlantNotFound):
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": err.Code(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) UpdateManufacturer(w http.ResponseWriter, r *http.Request) {
+	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+
+	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
+	if !auth.IsAdmin {
+		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	req := new(model.UpsertManufacturerRequest)
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.JSONDecodeFailure.String(),
+			"requestID": requestID,
+		})
+		return
+	}
+	defer r.Body.Close()
+	req.Code = r.PathValue("code")
+
+	if err := req.Validate(); err != nil {
+		slog.ErrorContext(r.Context(), errors.New(errors.JSONValidationFailure).Wrap(err).Error(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.JSONValidationFailure.String(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	if err := h.service.UpdateManufacturer(r.Context(), req.Model()); err != nil {
+		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		switch {
+		case err.ContainsCodes(errors.ManufacturerNotFound):
 			w.WriteHeader(http.StatusNotFound)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)

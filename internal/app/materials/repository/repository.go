@@ -96,8 +96,12 @@ UPDATE material_groups SET description = ?, updated_at = (UNIX_TIMESTAMP())
 	WHERE code = ? AND deleted_at = 0`
 
 const UpdatePlantQuery = `
-	UPDATE plants SET description = ?, updated_at = (UNIX_TIMESTAMP())
-		WHERE code = ? AND deleted_at = 0`
+UPDATE plants SET description = ?, updated_at = (UNIX_TIMESTAMP())
+	WHERE code = ? AND deleted_at = 0`
+
+const UpdateManufacturerQuery = `
+UPDATE manufacturers SET description = ?, updated_at = (UNIX_TIMESTAMP())
+	WHERE code = ? AND deleted_at = 0`
 
 const DeleteMaterialTypeQuery = `
 UPDATE material_types SET deleted_at = (UNIX_TIMESTAMP())
@@ -582,6 +586,24 @@ func (r *Repository) UpdatePlant(ctx context.Context, p model.Plant) *errors.Err
 
 	if row < 1 {
 		return errors.New(errors.PlantNotFound)
+	}
+
+	return nil
+}
+
+func (r *Repository) UpdateManufacturer(ctx context.Context, m model.Manufacturer) *errors.Error {
+	res, err := r.db.ExecContext(ctx, UpdateManufacturerQuery, m.Description, m.Code)
+	if err != nil {
+		return errors.New(errors.RunQueryFailure).Wrap(err)
+	}
+
+	row, err := res.RowsAffected()
+	if err != nil {
+		return errors.New(errors.RowsAffectedFailure).Wrap(err)
+	}
+
+	if row < 1 {
+		return errors.New(errors.ManufacturerNotFound)
 	}
 
 	return nil
