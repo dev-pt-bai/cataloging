@@ -30,6 +30,7 @@ type Service interface {
 	GetMaterialUoM(ctx context.Context, code string) (*model.MaterialUoM, *errors.Error)
 	GetMaterialGroup(ctx context.Context, code string) (*model.MaterialGroup, *errors.Error)
 	GetPlant(ctx context.Context, code string) (*model.Plant, *errors.Error)
+	GetManufacturer(ctx context.Context, code string) (*model.Manufacturer, *errors.Error)
 	UpdateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error
 	UpdateMaterialUoM(ctx context.Context, uom model.MaterialUoM) *errors.Error
 	UpdateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error
@@ -692,6 +693,31 @@ func (h *Handler) GetPlant(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{
 		"data": p,
+	})
+}
+
+func (h *Handler) GetManufacturer(w http.ResponseWriter, r *http.Request) {
+	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+
+	m, err := h.service.GetManufacturer(r.Context(), r.PathValue("code"))
+	if err != nil {
+		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		switch {
+		case err.ContainsCodes(errors.ManufacturerNotFound):
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": err.Code(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]any{
+		"data": m,
 	})
 }
 
