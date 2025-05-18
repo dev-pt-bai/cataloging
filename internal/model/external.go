@@ -96,6 +96,16 @@ func NewTextEmail(subject, content, recipient string) *Email {
 	}
 }
 
+func NewHTMLEmail(subject, content, recipient string) *Email {
+	return &Email{
+		Message: Message{
+			Subject:      subject,
+			Body:         Body{ContentType: "html", Content: content},
+			ToRecipients: []ToRecipient{{EmailAddress: EmailAddress{Address: recipient}}},
+		},
+	}
+}
+
 func (e Email) Validate() error {
 	messages := make([]string, 0, 5)
 

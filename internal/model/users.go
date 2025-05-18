@@ -25,6 +25,7 @@ type User struct {
 
 type UserOTP struct {
 	UserID    string `json:"userID"`
+	UserName  string `json:"userName"`
 	UserEmail string `json:"userEmail"`
 	OTP       string `json:"otp"`
 	CreatedAt int64  `json:"createdAt"`
@@ -44,14 +45,14 @@ func (u User) GenerateOTP() (UserOTP, error) {
 		b[i] = src[int(b[i])%len(src)]
 	}
 
-	return UserOTP{UserID: u.ID, UserEmail: u.Email, OTP: string(b), ExpiredAt: time.Now().Add(5 * time.Minute).Unix()}, nil
+	return UserOTP{UserID: u.ID, UserName: u.Name, UserEmail: u.Email, OTP: string(b), ExpiredAt: time.Now().Add(1 * time.Hour).Unix()}, nil
 }
 
 func (o UserOTP) NewVerificationEmail() *Email {
-	expiredAt := time.Unix(o.ExpiredAt, 0).UTC().Add(7 * time.Hour).Format("02 Jan 2006 15:04")
-	return NewTextEmail(
+	expiredAt := time.Unix(o.ExpiredAt, 0).UTC().Add(7 * time.Hour)
+	return NewHTMLEmail(
 		"[Cataloging] Verifikasi Email Anda",
-		fmt.Sprintf("Selamat datang di aplikasi Cataloging,\n\nGunakan kode One-Time-Password (OTP) berikut untuk memverifikasi email Anda:\n\n%s\n\nKode ini hanya berlaku sampai %v WIB.", o.OTP, expiredAt),
+		fmt.Sprintf(emailVerification, o.UserName, o.OTP, fmt.Sprintf(expiredAt.Format("02 %s 2006 15:04"), indonesianMonth[expiredAt.Month()])),
 		o.UserEmail,
 	)
 }
