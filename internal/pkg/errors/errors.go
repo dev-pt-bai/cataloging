@@ -54,6 +54,7 @@ const (
 	MaterialGroupAlreadyExists   ErrorCode = "409006"
 	AssetAlreadyExists           ErrorCode = "409007"
 	PlantAlreadyExists           ErrorCode = "409008"
+	ManufacturerAlreadyExists    ErrorCode = "409009"
 	UnsupportedFileType          ErrorCode = "415001"
 	MissingMSGraphParameter      ErrorCode = "422001"
 	MissingMSGraphAuthCode       ErrorCode = "422002"

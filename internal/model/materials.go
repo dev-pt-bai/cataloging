@@ -413,6 +413,44 @@ func (r UpsertPlantRequest) Model() Plant {
 	}
 }
 
+type UpsertManufacturerRequest struct {
+	Code        string `json:"code"`
+	Description string `json:"description"`
+}
+
+func (r UpsertManufacturerRequest) Validate() error {
+	messages := make([]string, 0, 5)
+
+	if len(r.Code) == 0 {
+		messages = append(messages, "manufacturer's code is required")
+	}
+
+	if len(r.Code) > 250 {
+		messages = append(messages, "manufacturer's code is too long")
+	}
+
+	if len(r.Description) == 0 {
+		messages = append(messages, "manufacturer's description is required")
+	}
+
+	if len(r.Description) > 1000 {
+		messages = append(messages, "manufacturer's description is too long")
+	}
+
+	if len(messages) > 0 {
+		return errors.New(strings.Join(messages, ","))
+	}
+
+	return nil
+}
+
+func (r UpsertManufacturerRequest) Model() Manufacturer {
+	return Manufacturer{
+		Code:        r.Code,
+		Description: r.Description,
+	}
+}
+
 type ListMaterialTypesCriteria struct {
 	FilterMaterialType
 	Sort

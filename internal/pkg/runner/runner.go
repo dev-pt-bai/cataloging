@@ -129,6 +129,7 @@ func (a *App) Start() error {
 	mux.HandleFunc("GET /plants/{code}", materialHandler.GetPlant)
 	mux.HandleFunc("PUT /plants/{code}", materialHandler.UpdatePlant)
 	mux.HandleFunc("DELETE /plants/{code}", materialHandler.DeletePlant)
+	mux.HandleFunc("POST /manufacturers", materialHandler.CreateManufacturer)
 	mux.HandleFunc("POST /requests", requestHandler.CreateRequest)
 	mux.HandleFunc("GET /requests/{id}", requestHandler.GetRequest)
 
