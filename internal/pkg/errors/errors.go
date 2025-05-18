@@ -46,6 +46,7 @@ const (
 	AssetNotFound                ErrorCode = "404007"
 	RequestNotFound              ErrorCode = "404008"
 	PlantNotFound                ErrorCode = "404009"
+	ManufacturerNotFound         ErrorCode = "404010"
 	UserAlreadyExists            ErrorCode = "409001"
 	UserOTPAlreadyExists         ErrorCode = "409002"
 	UserAlreadyVerified          ErrorCode = "409003"

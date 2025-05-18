@@ -78,6 +78,11 @@ SELECT code, description, created_at, updated_at
 	FROM plants
 	WHERE code = ? AND deleted_at = 0`
 
+const GetManufacturerQuery = `
+SELECT code, description, created_at, updated_at
+	FROM manufacturers
+	WHERE code = ? AND deleted_at = 0`
+
 const UpdateMaterialTypeQuery = `
 UPDATE material_types SET description = ?, val_class = ?, updated_at = (UNIX_TIMESTAMP())
 	WHERE code = ? AND deleted_at = 0`
@@ -495,6 +500,19 @@ func (r *Repository) GetPlant(ctx context.Context, code string) (*model.Plant, *
 	}
 
 	return p, nil
+}
+
+func (r *Repository) GetManufacturer(ctx context.Context, code string) (*model.Manufacturer, *errors.Error) {
+	m := new(model.Manufacturer)
+	err := r.db.QueryRowContext(ctx, GetManufacturerQuery, code).Scan(&m.Code, &m.Description, &m.CreatedAt, &m.UpdatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.New(errors.ManufacturerNotFound)
+		}
+		return nil, errors.New(errors.RunQueryFailure).Wrap(err)
+	}
+
+	return m, nil
 }
 
 func (r *Repository) UpdateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error {
