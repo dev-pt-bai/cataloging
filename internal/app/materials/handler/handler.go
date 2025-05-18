@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -21,6 +22,7 @@ type Service interface {
 	CreateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error
 	CreatePlant(ctx context.Context, p model.Plant) *errors.Error
 	CreateManufacturer(ctx context.Context, m model.Manufacturer) *errors.Error
+	BulkCreateManufacturers(ctx context.Context, file multipart.File) *errors.Error
 	ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) (*model.MaterialTypes, *errors.Error)
 	ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) (*model.MaterialUoMs, *errors.Error)
 	ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) (*model.MaterialGroups, *errors.Error)
@@ -313,6 +315,40 @@ func (h *Handler) CreateManufacturer(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{
 			"errorCode": err.Code(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *Handler) BulkCreateManufacturer(w http.ResponseWriter, r *http.Request) {
+	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		slog.ErrorContext(r.Context(), errors.New(errors.ParsingFileFailure).Wrap(err).Error(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.ParsingFileFailure.String(),
+			"requestID": requestID,
+		})
+		return
+	}
+	defer file.Close()
+
+	errCreate := h.service.BulkCreateManufacturers(r.Context(), file)
+	if errCreate != nil {
+		slog.ErrorContext(r.Context(), errCreate.Error(), slog.String("requestID", requestID))
+		switch {
+		case errCreate.ContainsCodes(errors.ManufacturerAlreadyExists):
+			w.WriteHeader(http.StatusConflict)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errCreate.Code(),
 			"requestID": requestID,
 		})
 		return

@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"io"
+	"mime/multipart"
 
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
@@ -13,6 +15,7 @@ type Repository interface {
 	CreateMaterialGroup(ctx context.Context, mg model.MaterialGroup) *errors.Error
 	CreatePlant(ctx context.Context, p model.Plant) *errors.Error
 	CreateManufacturer(ctx context.Context, m model.Manufacturer) *errors.Error
+	BulkCreateManufacturer(ctx context.Context, ms []model.Manufacturer) *errors.Error
 	ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) (*model.MaterialTypes, *errors.Error)
 	ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) (*model.MaterialUoMs, *errors.Error)
 	ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) (*model.MaterialGroups, *errors.Error)
@@ -35,12 +38,17 @@ type Repository interface {
 	DeleteManufacturer(ctx context.Context, code string) *errors.Error
 }
 
-type Service struct {
-	repository Repository
+type ExcelParser interface {
+	Open(r io.Reader) ([][]string, *errors.Error)
 }
 
-func New(repository Repository) *Service {
-	return &Service{repository: repository}
+type Service struct {
+	repository  Repository
+	excelParser ExcelParser
+}
+
+func New(repository Repository, excelParser ExcelParser) *Service {
+	return &Service{repository: repository, excelParser: excelParser}
 }
 
 func (s *Service) CreateMaterialType(ctx context.Context, mt model.MaterialType) *errors.Error {
@@ -61,6 +69,48 @@ func (s *Service) CreatePlant(ctx context.Context, p model.Plant) *errors.Error 
 
 func (s *Service) CreateManufacturer(ctx context.Context, m model.Manufacturer) *errors.Error {
 	return s.repository.CreateManufacturer(ctx, m)
+}
+
+func (s *Service) BulkCreateManufacturers(ctx context.Context, file multipart.File) *errors.Error {
+	res, err := s.excelParser.Open(file)
+	if err != nil {
+		return err
+	}
+
+	m, err := s.buildBulkManufacturers(res)
+	if err != nil {
+		return err
+	}
+
+	return s.repository.BulkCreateManufacturer(ctx, m)
+}
+
+func (s *Service) buildBulkManufacturers(src [][]string) ([]model.Manufacturer, *errors.Error) {
+	if len(src) <= 1 {
+		return nil, errors.New(errors.EmptySpreadsheet)
+	}
+
+	manufacturersFieldIsDefined := map[string]bool{
+		"Code":        false,
+		"Description": false,
+	}
+
+	for i := range src[0] {
+		if _, exists := manufacturersFieldIsDefined[src[0][i]]; !exists {
+			return nil, errors.New(errors.UnknownField)
+		}
+		if manufacturersFieldIsDefined[src[0][i]] {
+			return nil, errors.New(errors.DuplicateSpreadsheetColumn)
+		}
+		manufacturersFieldIsDefined[src[0][i]] = true
+	}
+
+	m := make([]model.Manufacturer, len(src)-1)
+	for i := range src[1:] {
+		m[i] = model.Manufacturer{Code: src[i+1][0], Description: src[i+1][1]}
+	}
+
+	return m, nil
 }
 
 func (s *Service) ListMaterialTypes(ctx context.Context, criteria model.ListMaterialTypesCriteria) (*model.MaterialTypes, *errors.Error) {

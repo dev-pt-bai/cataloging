@@ -30,6 +30,7 @@ import (
 	urepository "github.com/dev-pt-bai/cataloging/internal/app/users/repository"
 	uservice "github.com/dev-pt-bai/cataloging/internal/app/users/service"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/database"
+	"github.com/dev-pt-bai/cataloging/internal/pkg/excel"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/external/msgraph"
 )
 
@@ -78,8 +79,9 @@ func (a *App) Start() error {
 		return fmt.Errorf("failed to instantiate authentication handler: %w", err)
 	}
 
+	excelParser := excel.NewParser()
 	materialRepository := mrepository.New(db)
-	materialService := mservice.New(materialRepository)
+	materialService := mservice.New(materialRepository, excelParser)
 	materialHandler := mhandler.New(materialService)
 
 	assetRepository := asrepository.New(db)
@@ -136,6 +138,7 @@ func (a *App) Start() error {
 	mux.HandleFunc("DELETE /manufacturers/{code}", materialHandler.DeleteManufacturer)
 	mux.HandleFunc("POST /requests", requestHandler.CreateRequest)
 	mux.HandleFunc("GET /requests/{id}", requestHandler.GetRequest)
+	mux.HandleFunc("POST /bulk/manufacturers", materialHandler.BulkCreateManufacturer)
 
 	var newHandler http.Handler
 	middlewares := []middleware.MiddlewareFunc{
