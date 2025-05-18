@@ -25,6 +25,7 @@ type Service interface {
 	ListMaterialUoMs(ctx context.Context, criteria model.ListMaterialUoMsCriteria) (*model.MaterialUoMs, *errors.Error)
 	ListMaterialGroups(ctx context.Context, criteria model.ListMaterialGroupsCriteria) (*model.MaterialGroups, *errors.Error)
 	ListPlants(ctx context.Context, criteria model.ListPlantsCriteria) (*model.Plants, *errors.Error)
+	ListManufacturers(ctx context.Context, criteria model.ListManufacturersCriteria) (*model.Manufacturers, *errors.Error)
 	GetMaterialType(ctx context.Context, code string) (*model.MaterialType, *errors.Error)
 	GetMaterialUoM(ctx context.Context, code string) (*model.MaterialUoM, *errors.Error)
 	GetMaterialGroup(ctx context.Context, code string) (*model.MaterialGroup, *errors.Error)
@@ -453,6 +454,40 @@ func (h *Handler) ListPlants(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(p.Response(criteria.Page))
 }
 
+func (h *Handler) ListManufacturers(w http.ResponseWriter, r *http.Request) {
+	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+
+	criteria, errMessages := h.buildListManufacturersCriteria(r.URL.Query())
+	if len(errMessages) != 0 {
+		slog.ErrorContext(r.Context(), errMessages, slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.InvalidQueryParameter.String(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	m, err := h.service.ListManufacturers(r.Context(), criteria)
+	if err != nil {
+		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		switch {
+		case err.ContainsCodes(errors.InvalidQueryParameter, errors.InvalidPageNumber, errors.InvalidItemNumberPerPage):
+			w.WriteHeader(http.StatusBadRequest)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": err.Code(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(m.Response(criteria.Page))
+}
+
 func (h *Handler) buildListMaterialTypesCriteria(q url.Values) (model.ListMaterialTypesCriteria, string) {
 	c := model.ListMaterialTypesCriteria{}
 	messages := make([]string, 0, 5)
@@ -494,6 +529,18 @@ func (h *Handler) buildListPlantsCriteria(q url.Values) (model.ListPlantsCriteri
 	messages := make([]string, 0, 5)
 
 	c.FilterPlant.Description = q.Get("description")
+
+	h.sort(q, &c.Sort, &messages, model.IsAvailableToSortPlant)
+	h.paginate(q, &c.Page, &messages)
+
+	return c, strings.Join(messages, ", ")
+}
+
+func (h *Handler) buildListManufacturersCriteria(q url.Values) (model.ListManufacturersCriteria, string) {
+	c := model.ListManufacturersCriteria{}
+	messages := make([]string, 0, 5)
+
+	c.FilterManufacturer.Description = q.Get("description")
 
 	h.sort(q, &c.Sort, &messages, model.IsAvailableToSortPlant)
 	h.paginate(q, &c.Page, &messages)

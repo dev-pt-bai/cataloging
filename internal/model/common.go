@@ -76,6 +76,17 @@ func IsAvailableToSortPlant(fieldName string) bool {
 	return availableToSort
 }
 
+var manufacturersFieldToSort map[string]struct{} = map[string]struct{}{
+	"code":        {},
+	"description": {},
+}
+
+func IsAvailableToSortManufacturer(fieldName string) bool {
+	_, availableToSort := manufacturersFieldToSort[fieldName]
+
+	return availableToSort
+}
+
 type Flag bool
 
 func NewFlag(b bool) *Flag {

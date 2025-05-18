@@ -54,6 +54,10 @@ const ListPlantQuery = `
 WITH
 	cte1 AS (SELECT JSON_OBJECT('code', code, 'description', description, 'createdAt', created_at, 'updatedAt', updated_at) AS record FROM plants `
 
+const ListManufacturerQuery = `
+WITH
+	cte1 AS (SELECT JSON_OBJECT('code', code, 'description', description, 'createdAt', created_at, 'updatedAt', updated_at) AS record FROM manufacturers `
+
 const GetMaterialTypeQuery = `
 SELECT code, description, val_class, created_at, updated_at
 	FROM material_types
@@ -226,6 +230,21 @@ func (r *Repository) ListPlants(ctx context.Context, criteria model.ListPlantsCr
 	return p, nil
 }
 
+func (r *Repository) ListManufacturers(ctx context.Context, criteria model.ListManufacturersCriteria) (*model.Manufacturers, *errors.Error) {
+	query, args, err := r.buildListManufacturersQuery(criteria)
+	if err != nil {
+		return nil, errors.New(errors.BuildQueryFailure).Wrap(err)
+	}
+
+	m := new(model.Manufacturers)
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(&m)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, errors.New(errors.RunQueryFailure).Wrap(err)
+	}
+
+	return m, nil
+}
+
 type listParam struct {
 	q    strings.Builder
 	args []any
@@ -340,6 +359,36 @@ func (r *Repository) buildListPlantsQuery(criteria model.ListPlantsCriteria) (st
 }
 
 func (r *Repository) filterPlant(filter model.FilterPlant, param *listParam) {
+	whereClauses := make([]string, 0, 5)
+	whereClauses = append(whereClauses, "deleted_at = 0 ")
+
+	if len(filter.Description) != 0 {
+		whereClauses = append(whereClauses, "description LIKE ? ")
+		param.args = append(param.args, fmt.Sprintf("%%%s%%", filter.Description))
+	}
+
+	param.q.WriteString(fmt.Sprintf("WHERE %s ", strings.Join(whereClauses, "AND ")))
+}
+
+func (r *Repository) buildListManufacturersQuery(criteria model.ListManufacturersCriteria) (string, []any, error) {
+	param := listParam{
+		q:    strings.Builder{},
+		args: make([]any, 0, 5),
+	}
+	param.q.WriteString(ListManufacturerQuery)
+
+	r.filterManufacturer(criteria.FilterManufacturer, &param)
+	if err := r.sort(criteria.Sort, &param, model.IsAvailableToSortPlant); err != nil {
+		return "", nil, err
+	}
+	if err := r.paginate(criteria.Page, &param); err != nil {
+		return "", nil, err
+	}
+
+	return param.q.String(), param.args, nil
+}
+
+func (r *Repository) filterManufacturer(filter model.FilterManufacturer, param *listParam) {
 	whereClauses := make([]string, 0, 5)
 	whereClauses = append(whereClauses, "deleted_at = 0 ")
 
