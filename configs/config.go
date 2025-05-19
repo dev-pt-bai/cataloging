@@ -14,6 +14,7 @@ import (
 )
 
 type App struct {
+	BaseURL     string        `json:"baseURL"`
 	Port        uint16        `json:"port"`
 	TokenExpiry time.Duration `json:"tokenExpiry"`
 }

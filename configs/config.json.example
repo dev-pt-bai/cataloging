@@ -1,5 +1,6 @@
 {
     "app": {
+        "baseURL": "",
         "port": 8080,
         "tokenExpiry": 0
     },

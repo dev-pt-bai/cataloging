@@ -23,6 +23,14 @@ type User struct {
 	UpdatedAt  int64  `json:"updatedAt"`
 }
 
+func (u User) NewVerifiedEmail(appBaseURL string) *Email {
+	return NewHTMLEmail(
+		"[Cataloging] Selamat bergabung",
+		fmt.Sprintf(emailWelcome, u.Name, appBaseURL),
+		u.Email,
+	)
+}
+
 type UserOTP struct {
 	UserID    string `json:"userID"`
 	UserName  string `json:"userName"`
