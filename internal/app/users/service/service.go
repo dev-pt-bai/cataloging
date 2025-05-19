@@ -9,7 +9,6 @@ import (
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/auth"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
-	"github.com/eapache/go-resiliency/retrier"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -33,6 +32,7 @@ type Service struct {
 	msGraphClient MSGraphClient
 	tokenExpiry   time.Duration
 	secretJWT     string
+	appBaseURL    string
 }
 
 func New(repository Repository, msGraphClient MSGraphClient, config *configs.Config) (*Service, error) {
@@ -44,6 +44,7 @@ func New(repository Repository, msGraphClient MSGraphClient, config *configs.Con
 		return nil, fmt.Errorf("missing config")
 	}
 	s.tokenExpiry = config.App.TokenExpiry
+	s.appBaseURL = config.App.BaseURL
 
 	if len(config.Secret.JWT) == 0 {
 		return nil, fmt.Errorf("missing JWT secret")
@@ -86,11 +87,8 @@ func (s *Service) SendVerificationEmail(ctx context.Context, userID string) *err
 		return err
 	}
 
-	retrier := retrier.New(retrier.ConstantBackoff(3, 100*time.Millisecond), nil)
-	if err := retrier.RunCtx(ctx, func(ctx context.Context) error {
-		return s.msGraphClient.SendEmail(ctx, otp.NewVerificationEmail())
-	}); err != nil {
-		return nil
+	if err = s.msGraphClient.SendEmail(ctx, otp.NewVerificationEmail()); err != nil {
+		return err
 	}
 
 	return nil
@@ -113,6 +111,10 @@ func (s *Service) VerifyUser(ctx context.Context, userID string, code string) (*
 
 	auth, err := auth.GenerateAccessToken(user, s.tokenExpiry, s.secretJWT)
 	if err != nil {
+		return nil, err
+	}
+
+	if err = s.msGraphClient.SendEmail(ctx, user.NewVerifiedEmail(s.appBaseURL)); err != nil {
 		return nil, err
 	}
 
