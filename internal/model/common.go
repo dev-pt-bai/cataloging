@@ -56,15 +56,21 @@ func ParseUUID[T string | []byte](src T) (UUID, error) {
 		return u, errors.New("invalid UUID format")
 	}
 
-	for i := range 16 {
-		b1, exist := xvalues[src[2*i]]
+	for i, x := range [16]int{
+		0, 2, 4, 6,
+		9, 11,
+		14, 16,
+		19, 21,
+		24, 26, 28, 30, 32, 34,
+	} {
+		b1, exist := xvalues[src[x]]
 		if !exist {
-			return u, errors.New("invalid UUID format")
+			return u, errors.New("invalid UUID format Y")
 		}
 
-		b2, exist := xvalues[src[2*i+1]]
+		b2, exist := xvalues[src[x+1]]
 		if !exist {
-			return u, errors.New("invalid UUID format")
+			return u, errors.New("invalid UUID format Z")
 		}
 
 		u[i] = (b1 << 4) | b2
@@ -102,6 +108,19 @@ func (u *UUID) Scan(src any) error {
 
 func (u UUID) MarshalJSON() ([]byte, error) {
 	return json.Marshal(u.String())
+}
+
+func (u *UUID) UnmarshalJSON(src []byte) error {
+	if len(src) == 38 && src[0] == 34 && src[len(src)-1] == 34 {
+		src = src[1 : len(src)-1]
+	}
+	pu, err := ParseUUID(src)
+	if err != nil {
+		return err
+	}
+	*u = pu
+
+	return nil
 }
 
 type Sort struct {
