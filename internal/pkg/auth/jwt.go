@@ -1,11 +1,16 @@
 package auth
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func GenerateToken(user *model.User, tokenExpiry time.Duration, secret string) (*model.Auth, *errors.Error) {
@@ -21,32 +26,28 @@ func GenerateToken(user *model.User, tokenExpiry time.Duration, secret string) (
 		refreshExpiredAt = now.Add(10 * time.Hour * tokenExpiry).Unix()
 	}
 
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, (model.Auth{
+	accessToken, err := generateJWT((model.Auth{
 		UserID:     user.ID,
 		UserEmail:  user.Email,
 		IsAdmin:    user.IsAdmin,
 		IsVerified: user.IsVerified,
 		ExpiredAt:  accessExpiredAt,
-	}).MapClaims(false))
-
-	signedAccessToken, err := accessToken.SignedString([]byte(secret))
+	}).MapClaims(false), secret)
 	if err != nil {
-		return nil, errors.New(errors.SigningJWTFailure).Wrap(err)
+		return nil, errors.New(errors.GenerateJWTFailure).Wrap(err)
 	}
 
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, (model.Auth{
+	refreshToken, err := generateJWT((model.Auth{
 		UserID:    user.ID,
 		ExpiredAt: refreshExpiredAt,
-	}).MapClaims(true))
-
-	signedRefreshToken, err := refreshToken.SignedString([]byte(secret))
+	}).MapClaims(true), secret)
 	if err != nil {
-		return nil, errors.New(errors.SigningJWTFailure).Wrap(err)
+		return nil, errors.New(errors.GenerateJWTFailure).Wrap(err)
 	}
 
 	a := model.Auth{
-		AccessToken:  signedAccessToken,
-		RefreshToken: signedRefreshToken,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 		ExpiredAt:    accessExpiredAt,
 	}
 
@@ -63,17 +64,15 @@ func GenerateAccessToken(user *model.User, tokenExpiry time.Duration, secret str
 		accessExpiredAt = time.Now().Add(time.Hour * tokenExpiry).Unix()
 	}
 
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, (model.Auth{
+	signedAccessToken, err := generateJWT((model.Auth{
 		UserID:     user.ID,
 		UserEmail:  user.Email,
 		IsAdmin:    user.IsAdmin,
 		IsVerified: user.IsVerified,
 		ExpiredAt:  accessExpiredAt,
-	}).MapClaims(false))
-
-	signedAccessToken, err := accessToken.SignedString([]byte(secret))
+	}).MapClaims(false), secret)
 	if err != nil {
-		return nil, errors.New(errors.SigningJWTFailure).Wrap(err)
+		return nil, errors.New(errors.GenerateJWTFailure).Wrap(err)
 	}
 
 	a := model.Auth{
@@ -85,31 +84,86 @@ func GenerateAccessToken(user *model.User, tokenExpiry time.Duration, secret str
 }
 
 func ParseToken(token string, secret string) (*model.Auth, *errors.Error) {
-	t, err := jwt.Parse(token, func(t *jwt.Token) (any, error) {
-		method, ok := t.Method.(*jwt.SigningMethodHMAC)
-		if !ok || method != jwt.SigningMethodHS256 {
-			return nil, errors.New(errors.InvalidJWTSigningMethod)
-		}
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return nil, errors.New(errors.InvalidToken)
+	}
 
-		return []byte(secret), nil
-	})
+	decodedHeader, err := base64.RawURLEncoding.DecodeString(parts[0])
 	if err != nil {
 		return nil, errors.New(errors.ParseTokenFailure).Wrap(err)
 	}
 
-	claims, ok := t.Claims.(jwt.MapClaims)
-	if !ok || !t.Valid {
+	header := make(map[string]string)
+	if err = json.Unmarshal(decodedHeader, &header); err != nil {
+		return nil, errors.New(errors.ParseTokenFailure).Wrap(err)
+	}
+
+	if header["typ"] != "JWT" {
 		return nil, errors.New(errors.InvalidToken)
 	}
 
+	if header["alg"] != "HS256" {
+		return nil, errors.New(errors.InvalidJWTSigningMethod)
+	}
+
+	expectedSignature := generateSignatureHS256([]byte(parts[0]), []byte(parts[1]), secret)
+	if !hmac.Equal([]byte(expectedSignature), []byte(parts[2])) {
+		return nil, errors.New(errors.InvalidToken)
+	}
+
+	decodedPayload, err := base64.RawStdEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, errors.New(errors.ParseTokenFailure).Wrap(err)
+	}
+
+	payload := make(map[string]any)
+	if err = json.Unmarshal(decodedPayload, &payload); err != nil {
+		return nil, errors.New(errors.ParseTokenFailure).Wrap(err)
+	}
+
 	a := model.Auth{
-		IsRefreshToken: func(c map[string]any) bool { isRefreshToken, _ := c["isRefreshToken"].(bool); return isRefreshToken }(claims),
-		UserID:         func(c map[string]any) string { userID, _ := c["userID"].(string); return userID }(claims),
-		UserEmail:      func(c map[string]any) string { userEmail, _ := c["userEmail"].(string); return userEmail }(claims),
-		IsAdmin:        func(c map[string]any) model.Flag { isAdmin, _ := c["isAdmin"].(bool); return model.Flag(isAdmin) }(claims),
-		IsVerified:     func(c map[string]any) model.Flag { IsVrfd, _ := c["isVerified"].(bool); return model.Flag(IsVrfd) }(claims),
-		ExpiredAt:      func(c map[string]any) int64 { expiredAt, _ := c["expiredAt"].(float64); return int64(expiredAt) }(claims),
+		IsRefreshToken: func(c map[string]any) bool { isRefreshToken, _ := c["isRefreshToken"].(bool); return isRefreshToken }(payload),
+		UserID:         func(c map[string]any) string { userID, _ := c["userID"].(string); return userID }(payload),
+		UserEmail:      func(c map[string]any) string { userEmail, _ := c["userEmail"].(string); return userEmail }(payload),
+		IsAdmin:        func(c map[string]any) model.Flag { isAdmin, _ := c["isAdmin"].(bool); return model.Flag(isAdmin) }(payload),
+		IsVerified:     func(c map[string]any) model.Flag { IsVrfd, _ := c["isVerified"].(bool); return model.Flag(IsVrfd) }(payload),
+		ExpiredAt:      func(c map[string]any) int64 { expiredAt, _ := c["expiredAt"].(float64); return int64(expiredAt) }(payload),
 	}
 
 	return &a, nil
+}
+
+func generateJWT(p map[string]any, secret string) (string, error) {
+	if p == nil {
+		return "", fmt.Errorf("empty payload")
+	}
+
+	if len(secret) == 0 {
+		return "", fmt.Errorf("missing hash key")
+	}
+
+	header, _ := json.Marshal(map[string]string{
+		"alg": "HS256",
+		"typ": "JWT",
+	})
+	encodedHeader := make([]byte, base64.RawStdEncoding.EncodedLen(len(header)))
+	base64.RawURLEncoding.Encode(encodedHeader, header)
+
+	payload, err := json.Marshal(p)
+	if err != nil {
+		return "", err
+	}
+	encodedPayload := make([]byte, base64.RawStdEncoding.EncodedLen(len(payload)))
+	base64.RawURLEncoding.Encode(encodedPayload, payload)
+
+	signature := generateSignatureHS256(encodedHeader, encodedPayload, secret)
+
+	return fmt.Sprintf("%s.%s.%s", encodedHeader, encodedPayload, signature), nil
+}
+
+func generateSignatureHS256(header []byte, payload []byte, secret string) string {
+	hash := hmac.New(sha256.New, []byte(secret))
+	hash.Write(fmt.Appendf(nil, "%s.%s", header, payload))
+	return base64.RawURLEncoding.EncodeToString(hash.Sum(nil))
 }

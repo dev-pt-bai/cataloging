@@ -1,7 +1,5 @@
 package model
 
-import "github.com/golang-jwt/jwt/v5"
-
 type Auth struct {
 	AccessToken    string `json:"accessToken"`
 	RefreshToken   string `json:"refreshToken,omitempty"`
@@ -13,8 +11,8 @@ type Auth struct {
 	IsVerified     Flag   `json:"-"`
 }
 
-func (a Auth) MapClaims(isRefreshToken bool) jwt.MapClaims {
-	m := jwt.MapClaims{
+func (a Auth) MapClaims(isRefreshToken bool) map[string]any {
+	m := map[string]any{
 		"userID":    a.UserID,
 		"userEmail": a.UserEmail,
 		"expiredAt": a.ExpiredAt,
