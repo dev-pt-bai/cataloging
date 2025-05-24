@@ -70,7 +70,7 @@ const (
 	BuildQueryFailure            ErrorCode = "500006"
 	StartingTransactionFailure   ErrorCode = "500007"
 	CommittingTransactionFailure ErrorCode = "500008"
-	SigningJWTFailure            ErrorCode = "500009"
+	GenerateJWTFailure           ErrorCode = "500009"
 	CreateHTTPRequestFailure     ErrorCode = "500010"
 	SendHTTPRequestFailure       ErrorCode = "500011"
 	UndefinedJWTSecret           ErrorCode = "500012"
