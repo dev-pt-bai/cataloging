@@ -5,12 +5,11 @@ import (
 
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
-	"github.com/google/uuid"
 )
 
 type Repository interface {
 	CreateRequest(ctx context.Context, request model.Request) *errors.Error
-	GetRequest(ctx context.Context, ID uuid.UUID) (*model.Request, *errors.Error)
+	GetRequest(ctx context.Context, ID model.UUID) (*model.Request, *errors.Error)
 }
 
 type MSGraphClient interface {
@@ -30,7 +29,7 @@ func (s *Service) CreateRequest(ctx context.Context, r model.Request) *errors.Er
 	return s.repository.CreateRequest(ctx, r)
 }
 
-func (s *Service) GetRequest(ctx context.Context, ID uuid.UUID, requestedBy *model.Auth) (*model.Request, *errors.Error) {
+func (s *Service) GetRequest(ctx context.Context, ID model.UUID, requestedBy *model.Auth) (*model.Request, *errors.Error) {
 	request, err := s.repository.GetRequest(ctx, ID)
 	if err != nil {
 		return nil, err

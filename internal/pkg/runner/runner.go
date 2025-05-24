@@ -29,7 +29,7 @@ import (
 	uhandler "github.com/dev-pt-bai/cataloging/internal/app/users/handler"
 	urepository "github.com/dev-pt-bai/cataloging/internal/app/users/repository"
 	uservice "github.com/dev-pt-bai/cataloging/internal/app/users/service"
-	"github.com/dev-pt-bai/cataloging/internal/pkg/database"
+	"github.com/dev-pt-bai/cataloging/internal/pkg/database/sql"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/excel"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/external/msgraph"
 )
@@ -42,11 +42,11 @@ func (a *App) Start() error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	if err := database.Migrate(config); err != nil {
+	if err := sql.Migrate(config); err != nil {
 		return fmt.Errorf("failed to execute migrations: %w", err)
 	}
 
-	db, err := database.NewClient(config)
+	db, err := sql.NewClient(config)
 	if err != nil {
 		return fmt.Errorf("failed to create database client: %w", err)
 	}

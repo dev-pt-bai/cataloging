@@ -1,4 +1,4 @@
-package database
+package sql
 
 import (
 	"database/sql"
@@ -40,7 +40,7 @@ func Migrate(config *configs.Config) error {
 		return fmt.Errorf("failed to create source instance: %w", err)
 	}
 
-	driver, err := mysql.WithInstance(db, &mysql.Config{})
+	driver, err := mysql.WithInstance(db, new(mysql.Config))
 	if err != nil {
 		return fmt.Errorf("failed to create database instance: %w", err)
 	}

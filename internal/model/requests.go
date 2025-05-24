@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 type Request struct {
-	ID          uuid.UUID  `json:"id"`
+	ID          UUID       `json:"id"`
 	Subject     string     `json:"subject"`
 	IsNew       Flag       `json:"isNew"`
 	RequestedBy User       `json:"requestedBy"`
@@ -101,11 +99,11 @@ func (r UpsertRequestRequest) Validate() error {
 	return nil
 }
 
-func (r UpsertRequestRequest) Model(ID *uuid.UUID, status Status, requestedBy *Auth) Request {
+func (r UpsertRequestRequest) Model(ID *UUID, status Status, requestedBy *Auth) Request {
 	return Request{
-		ID: func(id *uuid.UUID) uuid.UUID {
+		ID: func(id *UUID) UUID {
 			if id == nil {
-				return uuid.New()
+				return NewUUID()
 			}
 			return *id
 		}(ID),
@@ -122,7 +120,7 @@ func (r UpsertRequestRequest) Model(ID *uuid.UUID, status Status, requestedBy *A
 			materials := make([]Material, 0, 5)
 			for i := range umrs {
 				materials = append(materials, Material{
-					ID:     uuid.New(),
+					ID:     NewUUID(),
 					Plant:  Plant{Code: umrs[i].Plant},
 					Number: umrs[i].Number,
 					Type:   MaterialType{Code: umrs[i].Type},

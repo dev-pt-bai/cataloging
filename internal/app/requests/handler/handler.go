@@ -9,12 +9,11 @@ import (
 	"github.com/dev-pt-bai/cataloging/internal/app/middleware"
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
-	"github.com/google/uuid"
 )
 
 type Service interface {
 	CreateRequest(ctx context.Context, r model.Request) *errors.Error
-	GetRequest(ctx context.Context, ID uuid.UUID, requestedBy *model.Auth) (*model.Request, *errors.Error)
+	GetRequest(ctx context.Context, ID model.UUID, requestedBy *model.Auth) (*model.Request, *errors.Error)
 }
 
 type Handler struct {
@@ -82,7 +81,7 @@ func (h *Handler) CreateRequest(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetRequest(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
-	reqID, err := uuid.Parse(r.PathValue("id"))
+	reqID, err := model.ParseUUID(r.PathValue("id"))
 	if err != nil {
 		slog.ErrorContext(r.Context(), errors.New(errors.MalformedRequestID).Wrap(err).Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusUnprocessableEntity)

@@ -12,7 +12,6 @@ import (
 	"github.com/dev-pt-bai/cataloging/internal/app/middleware"
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
-	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -94,7 +93,7 @@ func (h *Handler) buildAuthCodeURL() (string, error) {
 	q := u.Query()
 	q.Set("response_type", "code")
 	q.Set("response_mode", "query")
-	q.Set("state", uuid.NewString())
+	q.Set("state", model.NewUUID().String())
 	q.Set("client_id", h.clientID)
 	q.Set("redirect_uri", h.redirectURI)
 	q.Set("scope", h.scope)

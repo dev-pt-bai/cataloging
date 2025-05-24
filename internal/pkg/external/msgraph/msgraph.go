@@ -20,7 +20,6 @@ import (
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 )
 
 type Client struct {
@@ -221,7 +220,7 @@ func (c *Client) generateClientAssertion() (string, error) {
 		"aud": c.urlGetToken,
 		"iss": c.clientID,
 		"sub": c.clientID,
-		"jti": uuid.NewString(),
+		"jti": model.NewUUID().String(),
 		"nbf": now,
 		"exp": now + 300,
 	})
@@ -289,7 +288,7 @@ func (c *Client) UploadFile(ctx context.Context, file multipart.File, header *mu
 	writer.Close()
 
 	ext := filepath.Ext(header.Filename)
-	url := fmt.Sprintf("%s/%s%s:/content", c.urlUploadFile, uuid.NewString(), ext)
+	url := fmt.Sprintf("%s/%s%s:/content", c.urlUploadFile, model.NewUUID(), ext)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, body)
 	if err != nil {
 		return nil, errors.New(errors.CreateHTTPRequestFailure).Wrap(err)

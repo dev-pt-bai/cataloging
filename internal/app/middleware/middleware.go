@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/dev-pt-bai/cataloging/configs"
+	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/auth"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
-	"github.com/google/uuid"
 )
 
 type ContextKey string
@@ -26,7 +26,7 @@ type MiddlewareFunc func(http.Handler, *configs.Config) http.Handler
 
 func Logger(next http.Handler, _ *configs.Config) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requestID := uuid.NewString()
+		requestID := model.NewUUID().String()
 		ctx := context.WithValue(r.Context(), RequestIDKey, requestID)
 		r = r.Clone(ctx)
 
