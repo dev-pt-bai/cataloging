@@ -18,8 +18,8 @@ import (
 
 	"github.com/dev-pt-bai/cataloging/configs"
 	"github.com/dev-pt-bai/cataloging/internal/model"
+	"github.com/dev-pt-bai/cataloging/internal/pkg/auth"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type Client struct {
@@ -146,7 +146,7 @@ func (c *Client) buildRefreshTokenBody() (io.Reader, error) {
 	data.Set("client_id", c.clientID)
 	data.Set("scope", c.scope)
 
-	client_assertion, err := c.generateClientAssertion()
+	client_assertion, err := auth.GenerateTokenMSGraph(c.clientID, c.urlGetToken, c.encodedThumbprint, c.privateKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate client assertion: %w", err)
 	}
@@ -204,30 +204,13 @@ func (c *Client) buildGetTokenFromAuthCodeBody(authCode string) (io.Reader, erro
 	data.Set("scope", c.scope)
 	data.Set("redirect_uri", c.redirectURI)
 
-	client_assertion, err := c.generateClientAssertion()
+	client_assertion, err := auth.GenerateTokenMSGraph(c.clientID, c.urlGetToken, c.encodedThumbprint, c.privateKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate client assertion: %w", err)
 	}
 	data.Set("client_assertion", client_assertion)
 
 	return bytes.NewBufferString(data.Encode()), nil
-}
-
-func (c *Client) generateClientAssertion() (string, error) {
-	now := time.Now().Unix()
-
-	assertion := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"aud": c.urlGetToken,
-		"iss": c.clientID,
-		"sub": c.clientID,
-		"jti": model.NewUUID().String(),
-		"nbf": now,
-		"exp": now + 300,
-	})
-
-	assertion.Header["x5t"] = c.encodedThumbprint
-
-	return assertion.SignedString(c.privateKey)
 }
 
 func (c *Client) SendEmail(ctx context.Context, email *model.Email) *errors.Error {
