@@ -1,7 +1,9 @@
 package auth
 
 import (
+	"crypto"
 	"crypto/hmac"
+	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
@@ -26,7 +28,7 @@ func GenerateToken(user *model.User, tokenExpiry time.Duration, secret string) (
 		refreshExpiredAt = now.Add(10 * time.Hour * tokenExpiry).Unix()
 	}
 
-	accessToken, err := generateJWT((model.Auth{
+	accessToken, err := generateHS256JWT((model.Auth{
 		UserID:     user.ID,
 		UserEmail:  user.Email,
 		IsAdmin:    user.IsAdmin,
@@ -37,7 +39,7 @@ func GenerateToken(user *model.User, tokenExpiry time.Duration, secret string) (
 		return nil, errors.New(errors.GenerateJWTFailure).Wrap(err)
 	}
 
-	refreshToken, err := generateJWT((model.Auth{
+	refreshToken, err := generateHS256JWT((model.Auth{
 		UserID:    user.ID,
 		ExpiredAt: refreshExpiredAt,
 	}).MapClaims(true), secret)
@@ -64,7 +66,7 @@ func GenerateAccessToken(user *model.User, tokenExpiry time.Duration, secret str
 		accessExpiredAt = time.Now().Add(time.Hour * tokenExpiry).Unix()
 	}
 
-	signedAccessToken, err := generateJWT((model.Auth{
+	accessToken, err := generateHS256JWT((model.Auth{
 		UserID:     user.ID,
 		UserEmail:  user.Email,
 		IsAdmin:    user.IsAdmin,
@@ -76,7 +78,7 @@ func GenerateAccessToken(user *model.User, tokenExpiry time.Duration, secret str
 	}
 
 	a := model.Auth{
-		AccessToken: signedAccessToken,
+		AccessToken: accessToken,
 		ExpiredAt:   accessExpiredAt,
 	}
 
@@ -134,7 +136,39 @@ func ParseToken(token string, secret string) (*model.Auth, *errors.Error) {
 	return &a, nil
 }
 
-func generateJWT(p map[string]any, secret string) (string, error) {
+func GenerateTokenMSGraph(clientID string, aud string, x5t string, key *rsa.PrivateKey) (string, error) {
+	header, _ := json.Marshal(map[string]string{
+		"alg": "RS256",
+		"typ": "JWT",
+		"x5t": x5t,
+	})
+	encodedHeader := make([]byte, base64.RawStdEncoding.EncodedLen(len(header)))
+	base64.RawURLEncoding.Encode(encodedHeader, header)
+
+	now := time.Now().Unix()
+	payload, err := json.Marshal(map[string]any{
+		"aud": aud,
+		"iss": clientID,
+		"sub": clientID,
+		"jti": model.NewUUID().String(),
+		"nbf": now,
+		"exp": now + 300,
+	})
+	if err != nil {
+		return "", err
+	}
+	encodedPayload := make([]byte, base64.RawStdEncoding.EncodedLen(len(payload)))
+	base64.RawURLEncoding.Encode(encodedPayload, payload)
+
+	signature, err := generateSignatureRS256(encodedHeader, encodedPayload, key)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s.%s.%s", encodedHeader, encodedPayload, signature), nil
+}
+
+func generateHS256JWT(p map[string]any, secret string) (string, error) {
 	if p == nil {
 		return "", fmt.Errorf("empty payload")
 	}
@@ -165,5 +199,16 @@ func generateJWT(p map[string]any, secret string) (string, error) {
 func generateSignatureHS256(header []byte, payload []byte, secret string) string {
 	hash := hmac.New(sha256.New, []byte(secret))
 	hash.Write(fmt.Appendf(nil, "%s.%s", header, payload))
+
 	return base64.RawURLEncoding.EncodeToString(hash.Sum(nil))
+}
+
+func generateSignatureRS256(header []byte, payload []byte, key *rsa.PrivateKey) (string, error) {
+	hashed := sha256.Sum256(fmt.Appendf(nil, "%s.%s", header, payload))
+	s, err := rsa.SignPKCS1v15(nil, key, crypto.SHA256, hashed[:])
+	if err != nil {
+		return "", err
+	}
+
+	return base64.RawURLEncoding.EncodeToString(s), nil
 }
