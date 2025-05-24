@@ -6,7 +6,6 @@ import (
 
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
-	"github.com/google/uuid"
 )
 
 type Repository struct {
@@ -124,7 +123,7 @@ func (r *Repository) CreateRequest(ctx context.Context, request model.Request) *
 	return nil
 }
 
-func (r *Repository) GetRequest(ctx context.Context, ID uuid.UUID) (*model.Request, *errors.Error) {
+func (r *Repository) GetRequest(ctx context.Context, ID model.UUID) (*model.Request, *errors.Error) {
 	request := new(model.Request)
 	err := r.db.QueryRowContext(ctx, GetRequestQuery, ID).Scan(&request)
 	if err != nil {

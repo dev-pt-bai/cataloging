@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 type Material struct {
-	ID            uuid.UUID     `json:"id"`
+	ID            UUID          `json:"id"`
 	Number        *string       `json:"number"`
 	Plant         Plant         `json:"plant"`
 	Type          MaterialType  `json:"type"`
@@ -22,7 +20,7 @@ type Material struct {
 	LongText      string        `json:"longText"`
 	Note          *string       `json:"note"`
 	Status        Status        `json:"status"`
-	RequestID     uuid.UUID     `json:"requestID"`
+	RequestID     UUID          `json:"requestID"`
 	CreatedAt     int64         `json:"createdAt"`
 	UpdatedAt     int64         `json:"updatedAt"`
 	Attachments   []Asset       `json:"attachments"`

@@ -1,11 +1,108 @@
 package model
 
 import (
+	"crypto/rand"
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"math"
 )
+
+type UUID [16]byte
+
+var r = rand.Reader
+
+func NewUUID() UUID {
+	u := UUID{}
+	io.ReadFull(r, u[:])
+
+	u[6] = (u[6] & 0x0f) | 0x40
+	u[8] = (u[8] & 0x3f) | 0x80
+
+	return u
+}
+
+var xvalues = map[byte]byte{
+	48:  0,
+	49:  1,
+	50:  2,
+	51:  3,
+	52:  4,
+	53:  5,
+	54:  6,
+	55:  7,
+	56:  8,
+	57:  9,
+	65:  10,
+	66:  11,
+	67:  12,
+	68:  13,
+	69:  14,
+	70:  15,
+	97:  10,
+	98:  11,
+	99:  12,
+	100: 13,
+	101: 14,
+	102: 15,
+}
+
+func ParseUUID[T string | []byte](src T) (UUID, error) {
+	u := UUID{}
+
+	if len(src) != 36 || src[8] != '-' || src[13] != '-' || src[18] != '-' || src[23] != '-' {
+		return u, errors.New("invalid UUID format")
+	}
+
+	for i := range 16 {
+		b1, exist := xvalues[src[2*i]]
+		if !exist {
+			return u, errors.New("invalid UUID format")
+		}
+
+		b2, exist := xvalues[src[2*i+1]]
+		if !exist {
+			return u, errors.New("invalid UUID format")
+		}
+
+		u[i] = (b1 << 4) | b2
+	}
+
+	return u, nil
+}
+
+func (u UUID) String() string {
+	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", u[0:4], u[4:6], u[6:8], u[8:10], u[10:16])
+}
+
+func (u UUID) Value() (driver.Value, error) {
+	return u.String(), nil
+}
+
+func (u *UUID) Scan(src any) error {
+	if src == nil {
+		return nil
+	}
+
+	b, ok := src.([]byte)
+	if !ok {
+		return fmt.Errorf("failed to convert src of type [%T] to []byte", src)
+	}
+
+	pu, err := ParseUUID(b)
+	if err != nil {
+		return err
+	}
+	*u = pu
+
+	return nil
+}
+
+func (u UUID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(u.String())
+}
 
 type Sort struct {
 	FieldName    string
