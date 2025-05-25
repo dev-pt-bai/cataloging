@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -29,12 +31,27 @@ func NewClient(config *configs.Config) (*sql.DB, error) {
 	return db, nil
 }
 
+type migration struct {
+	name    string
+	version int
+}
+
 func Migrate(config *configs.Config) error {
 	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@/%s?multiStatements=true", config.Database.User, config.Database.Password, config.Database.Name))
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
 	defer db.Close()
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS schema_migrations (version BIGINT NOT NULL, dirty TINYINT(1) NOT NULL, PRIMARY KEY (version))`)
+	if err != nil {
+		return fmt.Errorf("failed to ensure schema_migrations table: %w", err)
+	}
+
+	_, err = db.Exec(`INSERT INTO schema_migrations (version, dirty) SELECT 0, 0 WHERE NOT EXISTS (SELECT * FROM schema_migrations)`)
+	if err != nil {
+		return fmt.Errorf("failed to initialize schema_migrations row: %w", err)
+	}
 
 	var version int
 	var isDirty bool
@@ -51,57 +68,80 @@ func Migrate(config *configs.Config) error {
 		return fmt.Errorf("failed to open migrations directory: %w", err)
 	}
 
-	lastIndex := len(entries) - 1
-	for i := lastIndex; i >= 0; i-- {
-		entryName := entries[i].Name()
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].Name() < entries[j].Name()
+	})
+
+	pending := make([]migration, 0, 5)
+	for _, entry := range entries {
+		entryName := entry.Name()
 		if !strings.HasSuffix(entryName, ".up.sql") {
 			continue
 		}
 
-		v, err := strconv.Atoi(entryName[:6])
+		v, err := parseMigrationVersion(entryName)
 		if err != nil {
-			return fmt.Errorf("failed to parse migration script version: %w", err)
+			return err
 		}
 
 		if v <= version {
-			break
-		}
-
-		lastIndex--
-	}
-
-	if lastIndex >= len(entries)-2 {
-		return nil
-	}
-
-	for i := lastIndex; i <= len(entries)-1; i++ {
-		entryName := entries[i].Name()
-		if !strings.HasSuffix(entryName, ".up.sql") {
 			continue
 		}
 
-		v, err := strconv.Atoi(entryName[:6])
-		if err != nil {
-			return fmt.Errorf("failed to parse migration script version: %w", err)
-		}
+		pending = append(pending, migration{name: entryName, version: v})
+	}
 
-		b, err := os.ReadFile(fmt.Sprintf("./migrations/%s", entryName))
-		if err != nil {
-			return fmt.Errorf("failed to read migration script: %s, cause: %w", entryName, err)
-		}
+	if len(pending) == 0 {
+		return nil
+	}
 
-		if _, err = db.Exec(string(b)); err != nil {
-			if _, errDirty := db.Exec(fmt.Sprintf("BEGIN;UPDATE schema_migrations SET version = %d, dirty = 1;COMMIT;", v)); errDirty != nil {
-				return fmt.Errorf("failed to update migration version: %w", errDirty)
-			}
-
-			return fmt.Errorf("failed to run migration script: %s, cause: %w", entryName, err)
-		}
-
-		if _, err = db.Exec(fmt.Sprintf("BEGIN;UPDATE schema_migrations SET version = %d;COMMIT;", v)); err != nil {
-			return fmt.Errorf("failed to update migration version: %w", err)
+	for i := range pending {
+		if err := up(db, pending[i]); err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+func up(db *sql.DB, migration migration) error {
+	b, err := os.ReadFile(filepath.Join("./migrations", migration.name))
+	if err != nil {
+		return fmt.Errorf("failed to read migration script: %s, cause: %w", migration.name, err)
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to start database transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err = tx.Exec(string(b)); err != nil {
+		if _, errDirty := tx.Exec("UPDATE schema_migrations SET version = ?, dirty = 1", migration.version); errDirty != nil {
+			return fmt.Errorf("failed to update migration version: %w", errDirty)
+		}
+
+		if errCommit := tx.Commit(); errCommit != nil {
+			return fmt.Errorf("failed to commit transaction: %w", errCommit)
+		}
+
+		return fmt.Errorf("failed to run migration script: %s, cause: %w", migration.name, err)
+	}
+
+	if _, err = tx.Exec("UPDATE schema_migrations SET version = ?", migration.version); err != nil {
+		return fmt.Errorf("failed to update migration version: %w", err)
+	}
+
+	if errCommit := tx.Commit(); errCommit != nil {
+		return fmt.Errorf("failed to commit transaction: %w", errCommit)
+	}
+
+	return nil
+}
+
+func parseMigrationVersion(name string) (int, error) {
+	if len(name) < 6 {
+		return 0, fmt.Errorf("invalid migration filename: %s", name)
+	}
+	return strconv.Atoi(name[:6])
 }
