@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/dev-pt-bai/cataloging/internal/model"
+	"github.com/dev-pt-bai/cataloging/internal/pkg/async/manager"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
 )
 
@@ -12,17 +13,17 @@ type Repository interface {
 	GetRequest(ctx context.Context, ID model.UUID) (*model.Request, *errors.Error)
 }
 
-type MSGraphClient interface {
-	SendEmail(ctx context.Context, email *model.Email) *errors.Error
+type TaskManager interface {
+	Enqueue(ctx context.Context, task *manager.Task) *errors.Error
 }
 
 type Service struct {
-	repository    Repository
-	msGraphClient MSGraphClient
+	repository  Repository
+	taskManager TaskManager
 }
 
-func New(repository Repository, msGraphClient MSGraphClient) *Service {
-	return &Service{repository: repository, msGraphClient: msGraphClient}
+func New(repository Repository, taskManager TaskManager) *Service {
+	return &Service{repository: repository, taskManager: taskManager}
 }
 
 func (s *Service) CreateRequest(ctx context.Context, r model.Request) *errors.Error {

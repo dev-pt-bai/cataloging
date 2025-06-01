@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -143,6 +144,25 @@ func AccessController(next http.Handler, _ *configs.Config) http.Handler {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func Recoverer(next http.Handler, _ *configs.Config) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				requestID, _ := r.Context().Value(RequestIDKey).(string)
+				slog.ErrorContext(r.Context(), errors.PanicGeneralFailure.String(), slog.Any("recover", rec), slog.String("requestID", requestID), slog.String("stack", string(debug.Stack())))
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{
+					"errorCode": errors.PanicGeneralFailure.String(),
+					"requestID": requestID,
+				})
+				return
+			}
+		}()
 
 		next.ServeHTTP(w, r)
 	})

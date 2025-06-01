@@ -2,6 +2,7 @@
 
 ![Go Version](https://img.shields.io/badge/go-1.24-blue)
 ![MySQL](https://img.shields.io/badge/mysql-4479A1?style=flat&logo=mysql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-%23DD0031.svg?logo=redis&logoColor=white)
 
 This is a simple Go-based web server application. The application exposes a RESTful API for registering new materials before being created in SAP.
 
@@ -20,6 +21,7 @@ Before you begin, ensure you have the following installed:
 
 - Go (version 1.24 or later)
 - MySQL (version 8.1.0 or later)
+- Redis (version 8.0.0 or later)
 
 ### Steps
 
@@ -49,9 +51,11 @@ Edit `config.json` to include, e.g., your database connection details
 ```json
 {
     "database": {
-        "user": "yourdbuser",
-        "password": "yourdbpassword",
-        "name": "yourdbname"
+        "sql": {
+            "user": "yourDBUser",
+            "password": "yourDBPassword",
+            "name": "yourDBName"
+        }
     }
 }
 ```

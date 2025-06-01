@@ -101,7 +101,11 @@ type UpsertUserRequest struct {
 	Password string `json:"password"`
 }
 
-func (r UpsertUserRequest) Validate() error {
+func (r *UpsertUserRequest) Validate() error {
+	if r == nil {
+		return fmt.Errorf("missing request object")
+	}
+
 	messages := make([]string, 0, 5)
 
 	if len(r.ID) == 0 {
@@ -180,7 +184,11 @@ type VerifyUserRequest struct {
 	Code string `json:"code"`
 }
 
-func (r VerifyUserRequest) Validate() error {
+func (r *VerifyUserRequest) Validate() error {
+	if r == nil {
+		return fmt.Errorf("missing request object")
+	}
+
 	messages := make([]string, 0, 5)
 
 	if len(r.Code) == 0 {

@@ -71,7 +71,11 @@ type UpsertRequestRequest struct {
 	Materials []UpsertMaterialRequest `json:"materials"`
 }
 
-func (r UpsertRequestRequest) Validate() error {
+func (r *UpsertRequestRequest) Validate() error {
+	if r == nil {
+		return fmt.Errorf("missing request object")
+	}
+
 	messages := make([]string, 0, 5)
 
 	if len(r.Subject) == 0 {

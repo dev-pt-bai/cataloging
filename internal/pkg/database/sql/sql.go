@@ -15,13 +15,13 @@ import (
 )
 
 func NewClient(config *configs.Config) (*sql.DB, error) {
-	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@/%s", config.Database.User, config.Database.Password, config.Database.Name))
+	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@/%s", config.Database.SQL.User, config.Database.SQL.Password, config.Database.SQL.Name))
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %w", err)
+		return nil, fmt.Errorf("failed to open sql database: %w", err)
 	}
 
 	if err = db.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to verify connection to database: %w", err)
+		return nil, fmt.Errorf("failed to verify connection to sql database: %w", err)
 	}
 
 	db.SetConnMaxLifetime(3 * time.Minute)
@@ -37,7 +37,7 @@ type migration struct {
 }
 
 func Migrate(config *configs.Config) error {
-	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@/%s?multiStatements=true", config.Database.User, config.Database.Password, config.Database.Name))
+	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@/%s?multiStatements=true", config.Database.SQL.User, config.Database.SQL.Password, config.Database.SQL.Name))
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
