@@ -93,14 +93,14 @@ func NewClient(config *configs.Config) (*Client, error) {
 	return client, nil
 }
 
-func AutoRefreshToken(config *configs.Config) *errors.Error {
+func (c *Client) AutoRefreshToken() error {
 	if client == nil || client.token == nil || len(client.token.AccessToken) == 0 {
 		slog.Warn("skipping refresh token: please peform delegated authentication first")
 		return nil
 	}
 	slog.Info("refreshing ms graph token")
 
-	return client.refreshToken(context.Background())
+	return c.refreshToken(context.Background())
 }
 
 func (c *Client) refreshToken(ctx context.Context) *errors.Error {

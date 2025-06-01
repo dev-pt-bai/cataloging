@@ -1,10 +1,13 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/mail"
 	"strings"
+
+	"github.com/dev-pt-bai/cataloging/internal/pkg/async/manager"
 )
 
 type MSGraphAuth struct {
@@ -106,7 +109,11 @@ func NewHTMLEmail(subject, content, recipient string) *Email {
 	}
 }
 
-func (e Email) Validate() error {
+func (e *Email) Validate() error {
+	if e == nil {
+		return fmt.Errorf("missing email object")
+	}
+
 	messages := make([]string, 0, 5)
 
 	if len(e.Message.Subject) == 0 {
@@ -135,4 +142,15 @@ func (e Email) Validate() error {
 	}
 
 	return nil
+}
+
+func (e *Email) NewTask(taskType string) *manager.Task {
+	data, _ := json.Marshal(e)
+
+	return &manager.Task{
+		ID:         NewUUID().String(),
+		Type:       taskType,
+		Data:       data,
+		RetryCount: 0,
+	}
 }

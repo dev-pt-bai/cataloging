@@ -292,7 +292,11 @@ type UpsertMaterialTypeRequest struct {
 	ValuationClass *string `json:"valuationClass"`
 }
 
-func (r UpsertMaterialTypeRequest) Validate() error {
+func (r *UpsertMaterialTypeRequest) Validate() error {
+	if r == nil {
+		return fmt.Errorf("missing request object")
+	}
+
 	messages := make([]string, 0, 5)
 
 	if len(r.Code) == 0 {
@@ -331,7 +335,11 @@ type UpsertMaterialUoMRequest struct {
 	Description string `json:"description"`
 }
 
-func (r UpsertMaterialUoMRequest) Validate() error {
+func (r *UpsertMaterialUoMRequest) Validate() error {
+	if r == nil {
+		return fmt.Errorf("missing request object")
+	}
+
 	messages := make([]string, 0, 5)
 
 	if len(r.Code) == 0 {
@@ -369,7 +377,11 @@ type UpsertMaterialGroupRequest struct {
 	Description string `json:"description"`
 }
 
-func (r UpsertMaterialGroupRequest) Validate() error {
+func (r *UpsertMaterialGroupRequest) Validate() error {
+	if r == nil {
+		return fmt.Errorf("missing request object")
+	}
+
 	messages := make([]string, 0, 5)
 
 	if len(r.Code) == 0 {
@@ -407,7 +419,11 @@ type UpsertPlantRequest struct {
 	Description string `json:"description"`
 }
 
-func (r UpsertPlantRequest) Validate() error {
+func (r *UpsertPlantRequest) Validate() error {
+	if r == nil {
+		return fmt.Errorf("missing request object")
+	}
+
 	messages := make([]string, 0, 5)
 
 	if len(r.Code) == 0 {
@@ -445,7 +461,11 @@ type UpsertManufacturerRequest struct {
 	Description string `json:"description"`
 }
 
-func (r UpsertManufacturerRequest) Validate() error {
+func (r *UpsertManufacturerRequest) Validate() error {
+	if r == nil {
+		return fmt.Errorf("missing request object")
+	}
+
 	messages := make([]string, 0, 5)
 
 	if len(r.Code) == 0 {

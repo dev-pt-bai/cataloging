@@ -1,9 +1,11 @@
 package main
 
 import (
+	"os"
+
 	"github.com/dev-pt-bai/cataloging/internal/pkg/runner"
 )
 
 func main() {
-	runner.Run()
+	os.Exit(runner.Run())
 }

@@ -15,8 +15,21 @@ import (
 
 type App struct {
 	BaseURL     string        `json:"baseURL"`
-	Port        uint16        `json:"port"`
+	Port        int           `json:"port"`
 	TokenExpiry time.Duration `json:"tokenExpiry"`
+	Async       Async         `json:"async"`
+}
+
+type Async struct {
+	KeyName      string    `json:"keyName"`
+	RetryKeyName string    `json:"retryKeyName"`
+	NumWorkers   int       `json:"numWorkers"`
+	MaxRetries   int       `json:"maxRetries"`
+	TaskTypes    TaskTypes `json:"taskTypes"`
+}
+
+type TaskTypes struct {
+	SendEmail string `json:"sendEmail"`
 }
 
 type Secret struct {
@@ -24,9 +37,18 @@ type Secret struct {
 }
 
 type Database struct {
+	SQL   SQL   `json:"sql"`
+	Redis Redis `json:"redis"`
+}
+
+type SQL struct {
 	User     string `json:"user"`
 	Password string `json:"password"`
 	Name     string `json:"name"`
+}
+
+type Redis struct {
+	Addr string `json:"addr"`
 }
 
 type External struct {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/dev-pt-bai/cataloging/configs"
 	"github.com/dev-pt-bai/cataloging/internal/model"
+	"github.com/dev-pt-bai/cataloging/internal/pkg/async/manager"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/auth"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
@@ -23,22 +24,23 @@ type Repository interface {
 	DeleteUser(ctx context.Context, ID string) *errors.Error
 }
 
-type MSGraphClient interface {
-	SendEmail(ctx context.Context, email *model.Email) *errors.Error
+type TaskManager interface {
+	Enqueue(ctx context.Context, task *manager.Task) *errors.Error
 }
 
 type Service struct {
-	repository    Repository
-	msGraphClient MSGraphClient
-	tokenExpiry   time.Duration
-	secretJWT     string
-	appBaseURL    string
+	repository        Repository
+	taskManager       TaskManager
+	tokenExpiry       time.Duration
+	secretJWT         string
+	appBaseURL        string
+	sendEmailTaskName string
 }
 
-func New(repository Repository, msGraphClient MSGraphClient, config *configs.Config) (*Service, error) {
+func New(repository Repository, taskManager TaskManager, config *configs.Config) (*Service, error) {
 	s := new(Service)
 	s.repository = repository
-	s.msGraphClient = msGraphClient
+	s.taskManager = taskManager
 
 	if config == nil {
 		return nil, fmt.Errorf("missing config")
@@ -50,6 +52,11 @@ func New(repository Repository, msGraphClient MSGraphClient, config *configs.Con
 		return nil, fmt.Errorf("missing JWT secret")
 	}
 	s.secretJWT = config.Secret.JWT
+
+	if len(config.App.Async.TaskTypes.SendEmail) == 0 {
+		return nil, fmt.Errorf("missing send email task name")
+	}
+	s.sendEmailTaskName = config.App.Async.TaskTypes.SendEmail
 
 	return s, nil
 }
@@ -87,7 +94,7 @@ func (s *Service) SendVerificationEmail(ctx context.Context, userID string) *err
 		return err
 	}
 
-	if err = s.msGraphClient.SendEmail(ctx, otp.NewVerificationEmail()); err != nil {
+	if err = s.taskManager.Enqueue(ctx, otp.NewVerificationEmail().NewTask(s.sendEmailTaskName)); err != nil {
 		return err
 	}
 
@@ -114,7 +121,7 @@ func (s *Service) VerifyUser(ctx context.Context, userID string, code string) (*
 		return nil, err
 	}
 
-	if err = s.msGraphClient.SendEmail(ctx, user.NewVerifiedEmail(s.appBaseURL)); err != nil {
+	if err = s.taskManager.Enqueue(ctx, user.NewVerifiedEmail(s.appBaseURL).NewTask(s.sendEmailTaskName)); err != nil {
 		return nil, err
 	}
 

@@ -2,15 +2,29 @@
     "app": {
         "baseURL": "",
         "port": 8080,
-        "tokenExpiry": 0
+        "tokenExpiry": 0,
+        "async": {
+            "keyName": "yourKeyName",
+            "retryKeyName": "yourRetryKeyName",
+            "numWorkers": 0,
+            "maxRetries": 0,
+            "taskTypes": {
+                "sendEmail": "sendEmailTaskName"
+            }
+        }
     },
     "secret": {
         "jwt": "yourJWTSecret"
     },
     "database": {
-        "user": "youruser",
-        "password": "yourpassword",
-        "name": "yourdbname"
+        "sql": {
+            "user": "yourDBUser",
+            "password": "yourDBPassword",
+            "name": "yourDBName"
+        },
+        "redis": {
+            "addr": "yourRedisAddress"
+        }
     },
     "external": {
         "msGraph": {
