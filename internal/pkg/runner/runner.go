@@ -89,7 +89,7 @@ func (a *App) Start(ctx context.Context) error {
 	a.Manager = taskManager
 
 	scheduler := scheduler.New()
-	scheduler.HandleFunc("auto-refresh-msgraph-token", config.External.MsGraph.RefreshInterval, msGraphClient.AutoRefreshToken)
+	scheduler.HandleFunc("auto-refresh-msgraph-token", config.External.MsGraph.RefreshIntervalSec, msGraphClient.AutoRefreshToken)
 
 	a.Scheduler = scheduler
 
@@ -143,11 +143,12 @@ func (a *App) Start(ctx context.Context) error {
 		requestHandler,
 	)
 	handler := a.use(
-		middleware.Recoverer,
-		middleware.Authenticator,
-		middleware.JSONFormatter,
-		middleware.Logger,
 		middleware.AccessController,
+		middleware.Logger,
+		middleware.Recoverer,
+		middleware.JSONFormatter,
+		middleware.RateLimiter,
+		middleware.Authenticator,
 	)
 
 	a.Server = &http.Server{
@@ -221,6 +222,10 @@ func (a *App) start(ctx context.Context) error {
 }
 
 func (a *App) use(middlewares ...middleware.MiddlewareFunc) http.Handler {
+	if len(middlewares) == 0 {
+		return a.mux
+	}
+
 	var handler http.Handler
 	for i := range middlewares {
 		if i == 0 {
