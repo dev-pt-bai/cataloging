@@ -5,15 +5,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"runtime/debug"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/dev-pt-bai/cataloging/configs"
 	"github.com/dev-pt-bai/cataloging/internal/model"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/auth"
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
+	"golang.org/x/time/rate"
 )
 
 type ContextKey string
@@ -154,7 +157,7 @@ func Recoverer(next http.Handler, _ *configs.Config) http.Handler {
 		defer func() {
 			if rec := recover(); rec != nil {
 				requestID, _ := r.Context().Value(RequestIDKey).(string)
-				slog.ErrorContext(r.Context(), errors.PanicGeneralFailure.String(), slog.Any("recover", rec), slog.String("requestID", requestID), slog.String("stack", string(debug.Stack())))
+				slog.ErrorContext(r.Context(), errors.PanicGeneralFailure.String(), slog.String("requestID", requestID), slog.String("stack", string(debug.Stack())))
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{
 					"errorCode": errors.PanicGeneralFailure.String(),
@@ -166,4 +169,38 @@ func Recoverer(next http.Handler, _ *configs.Config) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func RateLimiter(next http.Handler, config *configs.Config) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+
+		if !limiter(ip, config.App.RateLimiter.Rate, config.App.RateLimiter.Burst).Allow() {
+			requestID, _ := r.Context().Value(RequestIDKey).(string)
+			slog.ErrorContext(r.Context(), errors.TooManyRequest.String(), slog.String("requestID", requestID))
+			w.WriteHeader(http.StatusTooManyRequests)
+			json.NewEncoder(w).Encode(map[string]string{
+				"errorCode": errors.TooManyRequest.String(),
+				"requestID": requestID,
+			})
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+var mu sync.Locker
+var clients = make(map[string]*rate.Limiter)
+
+func limiter(ip string, r rate.Limit, b int) *rate.Limiter {
+	mu.Lock()
+	defer mu.Unlock()
+
+	_, exists := clients[ip]
+	if !exists {
+		clients[ip] = rate.NewLimiter(r, b)
+	}
+
+	return clients[ip]
 }

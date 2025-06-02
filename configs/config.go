@@ -11,6 +11,8 @@ import (
 	"io"
 	"os"
 	"time"
+
+	"golang.org/x/time/rate"
 )
 
 type App struct {
@@ -18,6 +20,7 @@ type App struct {
 	Port        int           `json:"port"`
 	TokenExpiry time.Duration `json:"tokenExpiry"`
 	Async       Async         `json:"async"`
+	RateLimiter RateLimiter   `json:"rateLimiter"`
 }
 
 type Async struct {
@@ -30,6 +33,11 @@ type Async struct {
 
 type TaskTypes struct {
 	SendEmail string `json:"sendEmail"`
+}
+
+type RateLimiter struct {
+	Rate  rate.Limit `json:"rate"`
+	Burst int        `json:"burst"`
 }
 
 type Secret struct {
@@ -56,17 +64,17 @@ type External struct {
 }
 
 type MsGraph struct {
-	TenantID          string          `json:"tenantID"`
-	ClientID          string          `json:"clientID"`
-	RedirectURI       string          `json:"redirectURI"`
-	Scope             string          `json:"scope"`
-	DirectoryName     string          `json:"directoryName"`
-	DriveID           string          `json:"driveID"`
-	MaxFileSize       int64           `json:"maxFileSize"`
-	SupportedFileExt  []string        `json:"supportedFileExt"`
-	RefreshInterval   time.Duration   `json:"refreshInterval"`
-	PrivateKey        *rsa.PrivateKey `json:"-"`
-	EncodedThumbprint string          `json:"-"`
+	TenantID           string          `json:"tenantID"`
+	ClientID           string          `json:"clientID"`
+	RedirectURI        string          `json:"redirectURI"`
+	Scope              string          `json:"scope"`
+	DirectoryName      string          `json:"directoryName"`
+	DriveID            string          `json:"driveID"`
+	MaxFileSize        int64           `json:"maxFileSize"`
+	SupportedFileExt   []string        `json:"supportedFileExt"`
+	RefreshIntervalSec int             `json:"refreshIntervalSec"`
+	PrivateKey         *rsa.PrivateKey `json:"-"`
+	EncodedThumbprint  string          `json:"-"`
 }
 
 type Config struct {

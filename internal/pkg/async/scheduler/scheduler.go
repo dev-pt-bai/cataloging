@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"maps"
 	"sync"
 	"time"
 )
@@ -16,15 +17,16 @@ type task struct {
 type TaskScheduler struct {
 	mu       sync.Mutex
 	handlers map[string]task
+	wg       sync.WaitGroup
 }
 
 func New() *TaskScheduler {
 	return &TaskScheduler{handlers: make(map[string]task)}
 }
 
-func (ts *TaskScheduler) HandleFunc(taskType string, duration time.Duration, handler func() error) {
-	if duration <= 0 {
-		panic("scheduler.HandleFunc: invalid duration")
+func (ts *TaskScheduler) HandleFunc(taskType string, intervalSec int, handler func() error) {
+	if intervalSec <= 0 {
+		panic("scheduler.HandleFunc: invalid interval")
 	}
 
 	if handler == nil {
@@ -40,39 +42,58 @@ func (ts *TaskScheduler) HandleFunc(taskType string, duration time.Duration, han
 	}
 
 	ts.handlers[taskType] = task{
-		ticker:  time.NewTicker(duration * time.Second),
+		ticker:  time.NewTicker(time.Duration(intervalSec) * time.Second),
 		handler: handler,
 	}
 }
 
 func (ts *TaskScheduler) Start(ctx context.Context) error {
-	for i := range ts.handlers {
-		handler := ts.handlers[i]
-		go func() {
+	ts.mu.Lock()
+	handlers := make(map[string]task, len(ts.handlers))
+	maps.Copy(handlers, ts.handlers)
+	ts.mu.Unlock()
+
+	for _, handler := range handlers {
+		ts.wg.Add(1)
+		go func(h task) {
+			defer ts.wg.Done()
 			for {
 				select {
 				case <-ctx.Done():
 					return
-				case <-handler.ticker.C:
-					if err := handler.handler(); err != nil {
+				case <-h.ticker.C:
+					if err := h.handler(); err != nil {
 						slog.ErrorContext(ctx, "scheduler.Start: running handler returns error", slog.String("cause", err.Error()))
 					}
 				}
 			}
-		}()
+		}(handler)
 	}
 
-	return ctx.Err()
+	<-ctx.Done()
+	return nil
 }
 
 func (ts *TaskScheduler) Stop(ctx context.Context) error {
+	ts.mu.Lock()
+	handlers := make(map[string]task, len(ts.handlers))
+	maps.Copy(handlers, ts.handlers)
+	ts.mu.Unlock()
+
+	for _, h := range handlers {
+		h.ticker.Stop()
+	}
+
+	done := make(chan struct{})
+	go func() {
+		ts.wg.Wait()
+		close(done)
+	}()
+
 	select {
+	case <-done:
+		return nil
 	case <-ctx.Done():
 		return ctx.Err()
-	default:
-		for i := range ts.handlers {
-			ts.handlers[i].ticker.Stop()
-		}
-		return nil
 	}
 }

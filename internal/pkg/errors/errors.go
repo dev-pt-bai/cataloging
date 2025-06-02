@@ -63,6 +63,7 @@ const (
 	MissingMSGraphParameter      ErrorCode = "422001"
 	MissingMSGraphAuthCode       ErrorCode = "422002"
 	MalformedRequestID           ErrorCode = "422003"
+	TooManyRequest               ErrorCode = "429001"
 	GeneratePasswordFailure      ErrorCode = "500001"
 	RunQueryFailure              ErrorCode = "500002"
 	RowsAffectedFailure          ErrorCode = "500003"

@@ -11,6 +11,10 @@
             "taskTypes": {
                 "sendEmail": "sendEmailTaskName"
             }
+        },
+        "rateLimiter": {
+            "rate": 0,
+            "burst": 0
         }
     },
     "secret": {
@@ -41,7 +45,7 @@
                 ".jpeg",
                 ".png"
             ],
-            "refreshInterval": 0
+            "refreshIntervalSec": 0
         }
     }
 }
