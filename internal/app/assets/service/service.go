@@ -52,7 +52,7 @@ func (s *Service) DeleteAsset(ctx context.Context, itemID string, deletedBy *mod
 		return err
 	}
 
-	if a.CreatedBy != deletedBy.UserID && !deletedBy.IsAdmin {
+	if a.CreatedBy != deletedBy.UserID && !deletedBy.IsAdmin() {
 		return errors.New(errors.ResourceIsForbidden)
 	}
 

@@ -36,7 +36,7 @@ func (s *Service) GetRequest(ctx context.Context, ID model.UUID, requestedBy *mo
 		return nil, err
 	}
 
-	if request.RequestedBy.ID != requestedBy.UserID && !requestedBy.IsAdmin {
+	if request.RequestedBy.ID != requestedBy.UserID && !requestedBy.IsAdmin() {
 		return nil, errors.New(errors.ResourceIsForbidden)
 	}
 

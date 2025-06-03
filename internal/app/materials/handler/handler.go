@@ -57,7 +57,7 @@ func (h *Handler) CreateMaterialType(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -111,7 +111,7 @@ func (h *Handler) CreateMaterialUoM(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -165,7 +165,7 @@ func (h *Handler) CreateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -219,7 +219,7 @@ func (h *Handler) CreatePlant(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -273,7 +273,7 @@ func (h *Handler) CreateManufacturer(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -763,7 +763,7 @@ func (h *Handler) UpdateMaterialType(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -818,7 +818,7 @@ func (h *Handler) UpdateMaterialUoM(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -873,7 +873,7 @@ func (h *Handler) UpdateMaterialGroup(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -928,7 +928,7 @@ func (h *Handler) UpdatePlant(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -983,7 +983,7 @@ func (h *Handler) UpdateManufacturer(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -1038,7 +1038,7 @@ func (h *Handler) DeleteMaterialType(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -1065,7 +1065,7 @@ func (h *Handler) DeleteMaterialUoM(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -1092,7 +1092,7 @@ func (h *Handler) DeleteMaterialGroup(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -1119,7 +1119,7 @@ func (h *Handler) DeletePlant(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -1146,7 +1146,7 @@ func (h *Handler) DeleteManufacturer(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{

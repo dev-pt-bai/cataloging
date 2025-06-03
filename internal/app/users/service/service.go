@@ -67,6 +67,7 @@ func (s *Service) CreateUser(ctx context.Context, user model.User) *errors.Error
 		return errors.New(errors.GeneratePasswordFailure).Wrap(err)
 	}
 	user.Password = string(b)
+	user.Role = model.Requester
 
 	if err := s.repository.CreateUser(ctx, user); err != nil {
 		return err

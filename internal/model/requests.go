@@ -34,7 +34,7 @@ func (r *Request) Scan(src any) error {
 type Status int
 
 const (
-	Unknown Status = iota
+	_ Status = iota
 	Draft
 	Processed
 	Rejected

@@ -224,12 +224,12 @@ curl --location '[host]:[port]/users' \
 
 ### GET /users
 
-List existing users with filter, sort criteria and pagination through query parameters. Optional `name`, `isAdmin` and `isVerified` parameter are for filtering users based on their name and administrator privilage. Optional `sortBy` parameter accepts `id`, `name`, `email` and `is_admin`, while `isDescending` is either `false` or `true`. Both are for defining sorting criteria. Default sorting criteria is by record's creation time in descending order. Optional `limit` and `page` are for pagination. Default page number and item per page are 1 and 20, respectively. Page number must be greater than 0 and item per page should be between 1 to 20. List users is exclusively available for administrators only.
+List existing users with filter, sort criteria and pagination through query parameters. Optional `name`, `role` and `isVerified` parameter are for filtering users based on their name and administrator privilage. Optional `sortBy` parameter accepts `id`, `name`, `email` and `role`, while `isDescending` is either `false` or `true`. Both are for defining sorting criteria. Default sorting criteria is by record's creation time in descending order. Optional `limit` and `page` are for pagination. Default page number and item per page are 1 and 20, respectively. Page number must be greater than 0 and item per page should be between 1 to 20. List users is exclusively available for administrators only.
 
 #### Example request
 
 ```bash
-curl --location '[host]:[port]/users?name=string&isAdmin=bool&isVerified=bool&sortBy=string&isDescending=bool&limit=int&page=int' \
+curl --location '[host]:[port]/users?name=string&role=int&isVerified=bool&sortBy=string&isDescending=bool&limit=int&page=int' \
 --header 'Authorization: Bearer [token]'
 ```
 
@@ -244,7 +244,7 @@ curl --location '[host]:[port]/users?name=string&isAdmin=bool&isVerified=bool&so
             "id": "string",
             "name": "string",
             "email": "string",
-            "isAdmin": false,
+            "role": "string",
             "isVerified": false,
             "createdAt": 0,
             "updatedAt": 0
@@ -290,7 +290,7 @@ curl --location '[host]:[port]/users/{id}' \
         "id": "string",
         "name": "string",
         "email": "string",
-        "isAdmin": false,
+        "role": "string",
         "isVerified": false,
         "createdAt": 0,
         "updatedAt": 0

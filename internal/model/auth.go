@@ -7,8 +7,12 @@ type Auth struct {
 	IsRefreshToken bool   `json:"-"`
 	UserID         string `json:"-"`
 	UserEmail      string `json:"-"`
-	IsAdmin        Flag   `json:"-"`
+	Role           Role   `json:"-"`
 	IsVerified     Flag   `json:"-"`
+}
+
+func (a Auth) IsAdmin() bool {
+	return a.Role == Administrator
 }
 
 func (a Auth) MapClaims(isRefreshToken bool) map[string]any {
@@ -19,7 +23,7 @@ func (a Auth) MapClaims(isRefreshToken bool) map[string]any {
 	}
 
 	if !isRefreshToken {
-		m["isAdmin"] = a.IsAdmin
+		m["role"] = a.Role
 		m["isVerified"] = a.IsVerified
 		return m
 	}

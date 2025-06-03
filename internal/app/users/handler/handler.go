@@ -81,7 +81,7 @@ func (h *Handler) SendVerificationEmail(w http.ResponseWriter, r *http.Request) 
 
 	userID := r.PathValue("id")
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if auth.UserID != userID && !auth.IsAdmin {
+	if auth.UserID != userID && !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -117,7 +117,7 @@ func (h *Handler) VerifyUser(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	userID := r.PathValue("id")
-	if auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth); auth.UserID != userID && !auth.IsAdmin {
+	if auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth); auth.UserID != userID && !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -175,7 +175,7 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -222,12 +222,12 @@ func (h *Handler) buildListUsersCriteria(q url.Values) (model.ListUsersCriteria,
 
 	c.FilterUser.Name = q.Get("name")
 
-	if isAdminStr := q.Get("isAdmin"); len(isAdminStr) != 0 {
-		isAdmin, err := strconv.ParseBool(isAdminStr)
+	if roleStr := q.Get("role"); len(roleStr) != 0 {
+		role, err := strconv.Atoi(roleStr)
 		if err != nil {
-			messages = append(messages, fmt.Sprintf("isAdmin: %s", err.Error()))
+			messages = append(messages, fmt.Sprintf("role: %s", err.Error()))
 		} else {
-			c.FilterUser.IsAdmin = model.NewFlag(isAdmin)
+			c.FilterUser.Role = model.Role(role)
 		}
 	}
 
@@ -298,7 +298,7 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.PathValue("id")
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if auth.UserID != userID && !auth.IsAdmin {
+	if auth.UserID != userID && !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -335,7 +335,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.PathValue("id")
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if auth.UserID != userID && !auth.IsAdmin {
+	if auth.UserID != userID && !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -391,7 +391,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.PathValue("id")
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if auth.UserID != userID && !auth.IsAdmin {
+	if auth.UserID != userID && !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{

@@ -31,7 +31,7 @@ func GenerateToken(user *model.User, tokenExpiry time.Duration, secret string) (
 	accessToken, err := generateHS256JWT((model.Auth{
 		UserID:     user.ID,
 		UserEmail:  user.Email,
-		IsAdmin:    user.IsAdmin,
+		Role:       user.Role,
 		IsVerified: user.IsVerified,
 		ExpiredAt:  accessExpiredAt,
 	}).MapClaims(false), secret)
@@ -69,7 +69,7 @@ func GenerateAccessToken(user *model.User, tokenExpiry time.Duration, secret str
 	accessToken, err := generateHS256JWT((model.Auth{
 		UserID:     user.ID,
 		UserEmail:  user.Email,
-		IsAdmin:    user.IsAdmin,
+		Role:       user.Role,
 		IsVerified: user.IsVerified,
 		ExpiredAt:  accessExpiredAt,
 	}).MapClaims(false), secret)
@@ -128,7 +128,7 @@ func ParseToken(token string, secret string) (*model.Auth, *errors.Error) {
 		IsRefreshToken: func(c map[string]any) bool { isRefreshToken, _ := c["isRefreshToken"].(bool); return isRefreshToken }(payload),
 		UserID:         func(c map[string]any) string { userID, _ := c["userID"].(string); return userID }(payload),
 		UserEmail:      func(c map[string]any) string { userEmail, _ := c["userEmail"].(string); return userEmail }(payload),
-		IsAdmin:        func(c map[string]any) model.Flag { isAdmin, _ := c["isAdmin"].(bool); return model.Flag(isAdmin) }(payload),
+		Role:           func(c map[string]any) model.Role { role, _ := c["role"].(string); return model.RoleFromStr(role) }(payload),
 		IsVerified:     func(c map[string]any) model.Flag { IsVrfd, _ := c["isVerified"].(bool); return model.Flag(IsVrfd) }(payload),
 		ExpiredAt:      func(c map[string]any) int64 { expiredAt, _ := c["expiredAt"].(float64); return int64(expiredAt) }(payload),
 	}
