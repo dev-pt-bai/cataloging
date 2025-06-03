@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     name        VARCHAR(255)    NOT NULL,
     email       VARCHAR(255)    NOT NULL,
     password    VARCHAR(255)    NOT NULL,
-    is_admin    TINYINT(1)      DEFAULT 0,
+    role        TINYINT         NOT NULL,
     is_verified TINYINT(1)      DEFAULT 0,
     created_at  INT UNSIGNED    DEFAULT (UNIX_TIMESTAMP()),
     updated_at  INT UNSIGNED    DEFAULT (UNIX_TIMESTAMP()),

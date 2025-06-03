@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS users (
     name        VARCHAR(255)    NOT NULL,
     email       VARCHAR(255)    NOT NULL,
     password    VARCHAR(255)    NOT NULL,
-    is_admin    TINYINT(1)      DEFAULT 0,
+    role        TINYINT         NOT NULL,
     created_at  INT UNSIGNED    DEFAULT (UNIX_TIMESTAMP()),
     updated_at  INT UNSIGNED    DEFAULT (UNIX_TIMESTAMP()),
     deleted_at  INT UNSIGNED    DEFAULT 0,
@@ -93,13 +93,13 @@ CREATE TABLE IF NOT EXISTS users (
     name        VARCHAR(255)    NOT NULL,
     email       VARCHAR(255)    NOT NULL,
     password    VARCHAR(255)    NOT NULL,
-    is_admin    TINYINT(1)      DEFAULT 0,
+    role        TINYINT         NOT NULL,
     created_at  INT UNSIGNED    DEFAULT (UNIX_TIMESTAMP()),
     updated_at  INT UNSIGNED    DEFAULT (UNIX_TIMESTAMP()),
-    deleted_at  INT UNSIGNED    DEFAULT 0
-);
+    deleted_at  INT UNSIGNED    DEFAULT 0,
 
-CREATE UNIQUE INDEX unique_id_idx ON users (id, deleted_at);
+    PRIMARY KEY (id, deleted_at)
+);
 ```
 
 ## Deploying the migrations

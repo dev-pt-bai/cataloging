@@ -61,7 +61,7 @@ func (h *Handler) GetMSGraphAuthCode(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if !auth.IsAdmin {
+	if !auth.IsAdmin() {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{

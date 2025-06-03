@@ -19,8 +19,8 @@ func New(db *sql.DB) *Repository {
 }
 
 const CreateUserQuery = `
-INSERT INTO users (id, name, email, password)
-	VALUES (?, ?, ?, ?)`
+INSERT INTO users (id, name, email, password, role)
+	VALUES (?, ?, ?, ?, ?)`
 
 const CreateOTPQuery = `
 INSERT INTO user_otps (user_id, user_email, otp, expired_at)
@@ -38,10 +38,10 @@ UPDATE users SET is_verified = 1, updated_at = (UNIX_TIMESTAMP())
 
 const ListUserQuery = `
 WITH
-	cte1 AS (SELECT JSON_OBJECT('id', id, 'name', name, 'email', email, 'password', password, 'isAdmin', is_admin, 'isVerified', is_verified, 'createdAt', created_at, 'updatedAt', updated_at) AS record FROM users `
+	cte1 AS (SELECT JSON_OBJECT('id', id, 'name', name, 'email', email, 'password', password, 'role', role, 'isVerified', is_verified, 'createdAt', created_at, 'updatedAt', updated_at) AS record FROM users `
 
 const GetUserQuery = `
-SELECT id, name, email, password, is_admin, is_verified, created_at, updated_at
+SELECT id, name, email, password, role, is_verified, created_at, updated_at
 	FROM users
 	WHERE id = ? AND deleted_at = 0`
 
@@ -54,7 +54,7 @@ UPDATE users SET deleted_at = (UNIX_TIMESTAMP())
 	WHERE id = ?`
 
 func (r *Repository) CreateUser(ctx context.Context, user model.User) *errors.Error {
-	_, err := r.db.ExecContext(ctx, CreateUserQuery, user.ID, user.Name, user.Email, user.Password)
+	_, err := r.db.ExecContext(ctx, CreateUserQuery, user.ID, user.Name, user.Email, user.Password, user.Role)
 	if err != nil {
 		if errors.HasMySQLErrCode(err, 1062) {
 			return errors.New(errors.UserAlreadyExists).Wrap(err)
@@ -121,7 +121,7 @@ func (r *Repository) VerifyUser(ctx context.Context, ID string) (*model.User, *e
 	}
 
 	user := new(model.User)
-	err = tx.QueryRowContext(ctx, GetUserQuery, ID).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.IsAdmin, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt)
+	err = tx.QueryRowContext(ctx, GetUserQuery, ID).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return nil, errors.New(errors.RunQueryFailure).Wrap(err)
 	}
@@ -180,9 +180,9 @@ func (r *Repository) filterUser(filter model.FilterUser, param *listParam) {
 		param.args = append(param.args, fmt.Sprintf("%%%s%%", filter.Name))
 	}
 
-	if filter.IsAdmin != nil {
-		whereClauses = append(whereClauses, "is_admin = ? ")
-		param.args = append(param.args, *filter.IsAdmin)
+	if filter.Role != 0 {
+		whereClauses = append(whereClauses, "role = ? ")
+		param.args = append(param.args, filter.Role)
 	}
 
 	if filter.IsVerified != nil {
@@ -240,7 +240,7 @@ func (r *Repository) paginate(page model.Page, param *listParam) *errors.Error {
 
 func (r *Repository) GetUser(ctx context.Context, ID string) (*model.User, *errors.Error) {
 	user := new(model.User)
-	err := r.db.QueryRowContext(ctx, GetUserQuery, ID).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.IsAdmin, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, GetUserQuery, ID).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role, &user.IsVerified, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.New(errors.UserNotFound)

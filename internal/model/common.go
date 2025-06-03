@@ -137,7 +137,7 @@ var usersFieldToSort map[string]struct{} = map[string]struct{}{
 	"id":          {},
 	"name":        {},
 	"email":       {},
-	"is_admin":    {},
+	"role":        {},
 	"is_verified": {},
 }
 

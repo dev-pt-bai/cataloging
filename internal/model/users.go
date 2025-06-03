@@ -17,10 +17,53 @@ type User struct {
 	Name       string `json:"name"`
 	Email      string `json:"email"`
 	Password   string `json:"-"`
-	IsAdmin    Flag   `json:"isAdmin"`
+	Role       Role   `json:"role"`
 	IsVerified Flag   `json:"isVerified"`
 	CreatedAt  int64  `json:"createdAt"`
 	UpdatedAt  int64  `json:"updatedAt"`
+}
+
+type Role int
+
+const (
+	_ Role = iota
+	Requester
+	Cataloger
+	Approver
+	Administrator
+)
+
+func (r Role) MarshalJSON() ([]byte, error) {
+	var role string
+	switch r {
+	default:
+		role = "Unknown"
+	case Requester:
+		role = "Requester"
+	case Cataloger:
+		role = "Cataloger"
+	case Approver:
+		role = "Approver"
+	case Administrator:
+		role = "Administrator"
+	}
+
+	return json.Marshal(role)
+}
+
+func RoleFromStr(s string) Role {
+	switch s {
+	default:
+		return 0
+	case "Requester":
+		return Requester
+	case "Cataloger":
+		return Cataloger
+	case "Approver":
+		return Approver
+	case "Administrator":
+		return Administrator
+	}
 }
 
 func (u User) NewVerifiedEmail(appBaseURL string) *Email {
@@ -222,6 +265,6 @@ type ListUsersCriteria struct {
 
 type FilterUser struct {
 	Name       string
-	IsAdmin    *Flag
+	Role       Role
 	IsVerified *Flag
 }

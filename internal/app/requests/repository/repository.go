@@ -37,7 +37,7 @@ UPDATE assets SET material_id = ?, updated_at = (UNIX_TIMESTAMP())
 const GetRequestQuery = `
 WITH
     cte1 AS (SELECT id, subject, is_new, requested_by, status, created_at, updated_at FROM requests WHERE id = ? AND deleted_at = 0),
-	cte2 AS (SELECT JSON_OBJECT('id', id, 'name', name, 'email', email, 'isAdmin', is_admin, 'isVerified', is_verified, 'createdAt', created_at, 'updatedAt', updated_at) AS requester FROM users WHERE id = (SELECT requested_by FROM cte1) AND deleted_at = 0),
+	cte2 AS (SELECT JSON_OBJECT('id', id, 'name', name, 'email', email, 'role', role, 'isVerified', is_verified, 'createdAt', created_at, 'updatedAt', updated_at) AS requester FROM users WHERE id = (SELECT requested_by FROM cte1) AND deleted_at = 0),
 	cte3 AS (SELECT id, number, plant_code, type_code, uom_code, group_code, equipment_code, manufacturer_code, short_text, long_text, note, status, request_id, created_at, updated_at FROM materials WHERE request_id = (SELECT id FROM cte1) AND deleted_at = 0),
 	cte4 AS (SELECT code, JSON_OBJECT('code', code, 'description', description, 'createdAt', created_at, 'updatedAt', updated_at) AS plant FROM plants WHERE code IN (SELECT plant_code FROM cte3) AND deleted_at = 0),
 	cte5 AS (SELECT code, JSON_OBJECT('code', code, 'description', description, 'createdAt', created_at, 'updatedAt', updated_at) AS type FROM material_types WHERE code IN (SELECT type_code FROM cte3) AND deleted_at = 0),

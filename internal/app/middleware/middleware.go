@@ -190,7 +190,7 @@ func RateLimiter(next http.Handler, config *configs.Config) http.Handler {
 	})
 }
 
-var mu sync.Locker
+var mu sync.Mutex
 var clients = make(map[string]*rate.Limiter)
 
 func limiter(ip string, r rate.Limit, b int) *rate.Limiter {

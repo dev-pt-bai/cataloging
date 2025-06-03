@@ -143,12 +143,12 @@ func (a *App) Start(ctx context.Context) error {
 		requestHandler,
 	)
 	handler := a.use(
-		middleware.AccessController,
-		middleware.Logger,
-		middleware.Recoverer,
-		middleware.JSONFormatter,
-		middleware.RateLimiter,
 		middleware.Authenticator,
+		middleware.RateLimiter,
+		middleware.JSONFormatter,
+		middleware.Recoverer,
+		middleware.Logger,
+		middleware.AccessController,
 	)
 
 	a.Server = &http.Server{
