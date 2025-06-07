@@ -21,6 +21,7 @@ type Repository interface {
 	ListUsers(ctx context.Context, criteria model.ListUsersCriteria) (*model.Users, *errors.Error)
 	GetUser(ctx context.Context, ID string) (*model.User, *errors.Error)
 	UpdateUser(ctx context.Context, user model.User) *errors.Error
+	AssignUserRole(ctx context.Context, role model.Role, ID string) *errors.Error
 	DeleteUser(ctx context.Context, ID string) *errors.Error
 }
 
@@ -133,7 +134,7 @@ func (s *Service) ListUsers(ctx context.Context, criteria model.ListUsersCriteri
 	return s.repository.ListUsers(ctx, criteria)
 }
 
-func (s *Service) GetUserByID(ctx context.Context, ID string) (*model.User, *errors.Error) {
+func (s *Service) GetUser(ctx context.Context, ID string) (*model.User, *errors.Error) {
 	return s.repository.GetUser(ctx, ID)
 }
 
@@ -157,6 +158,10 @@ func (s *Service) UpdateUser(ctx context.Context, user model.User) *errors.Error
 	return s.repository.UpdateUser(ctx, user)
 }
 
-func (s *Service) DeleteUserByID(ctx context.Context, ID string) *errors.Error {
+func (s *Service) AssignUserRole(ctx context.Context, role model.Role, ID string) *errors.Error {
+	return s.repository.AssignUserRole(ctx, role, ID)
+}
+
+func (s *Service) DeleteUser(ctx context.Context, ID string) *errors.Error {
 	return s.repository.DeleteUser(ctx, ID)
 }

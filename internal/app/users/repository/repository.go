@@ -49,6 +49,10 @@ const UpdateUserQuery = `
 UPDATE users SET name = ?, email = ?, password = ?, is_verified = ?, updated_at = (UNIX_TIMESTAMP())
 	WHERE id = ? AND deleted_at = 0`
 
+const AssignUserRoleQuery = `
+UPDATE users SET role = ?, updated_at = (UNIX_TIMESTAMP())
+	WHERE id = ? AND deleted_at = 0`
+
 const DeleteUserQuery = `
 UPDATE users SET deleted_at = (UNIX_TIMESTAMP())
 	WHERE id = ?`
@@ -253,6 +257,24 @@ func (r *Repository) GetUser(ctx context.Context, ID string) (*model.User, *erro
 
 func (r *Repository) UpdateUser(ctx context.Context, user model.User) *errors.Error {
 	res, err := r.db.ExecContext(ctx, UpdateUserQuery, user.Name, user.Email, user.Password, user.IsVerified, user.ID)
+	if err != nil {
+		return errors.New(errors.RunQueryFailure).Wrap(err)
+	}
+
+	row, err := res.RowsAffected()
+	if err != nil {
+		return errors.New(errors.RowsAffectedFailure).Wrap(err)
+	}
+
+	if row < 1 {
+		return errors.New(errors.UserNotFound)
+	}
+
+	return nil
+}
+
+func (r *Repository) AssignUserRole(ctx context.Context, role model.Role, ID string) *errors.Error {
+	res, err := r.db.ExecContext(ctx, AssignUserRoleQuery, role, ID)
 	if err != nil {
 		return errors.New(errors.RunQueryFailure).Wrap(err)
 	}

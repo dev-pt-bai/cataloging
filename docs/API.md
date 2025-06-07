@@ -361,14 +361,14 @@ curl --location --request DELETE '[host]:[port]/users/{id}' \
 }
 ```
 
-### GET /users/{id}/verify
+### GET /users/{id}/verification
 
-Send an email with verification code to user. To be able to create a material request, user must be verified. An email can be used by multiple users, in which each user will get different verification code. A verification code typically lasts for 5 (five) minutes before it becomes expired. The code should be sent back to the server through `POST /users/{id}/verify` within this time limit.
+Send an email with verification code to user. To be able to create a material request, user must be verified. An email can be used by multiple users, in which each user will get different verification code. A verification code typically lasts for 5 (five) minutes before it becomes expired. The code should be sent back to the server through `POST /users/{id}/verification` within this time limit.
 
 #### Example request
 
 ```bash
-curl --location '[host]:[port]/users/{id}/verify' \
+curl --location '[host]:[port]/users/{id}/verification' \
 --header 'Authorization: Bearer [token]'
 ```
 
@@ -385,14 +385,14 @@ curl --location '[host]:[port]/users/{id}/verify' \
 }
 ```
 
-### POST /users/{id}/verify
+### POST /users/{id}/verification
 
-Verify the user by sending a verification code which has been sent previously from `GET /users/{id}/verify`. In a successful attempt, it will return a new access token which marks that the user has been verified. Verification should only be carried out once. Re-verifying the already-verified user will result in an error. However, when the user's email is changed via an update, it needs to be re-verified.
+Verify the user by sending a verification code which has been sent previously from `GET /users/{id}/verification`. In a successful attempt, it will return a new access token which marks that the user has been verified. Verification should only be carried out once. Re-verifying the already-verified user will result in an error. However, when the user's email is changed via an update, it needs to be re-verified.
 
 #### Example request
 
 ```bash
-curl --location '[host]:[port]/users/{id}/verify' \
+curl --location '[host]:[port]/users/{id}/verification' \
 --header 'Authorization: Bearer [token]' \
 --header 'Content-Type: application/json' \
 --data '{

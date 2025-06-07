@@ -20,9 +20,10 @@ type Service interface {
 	SendVerificationEmail(ctx context.Context, userID string) *errors.Error
 	VerifyUser(ctx context.Context, userID string, code string) (*model.Auth, *errors.Error)
 	ListUsers(ctx context.Context, criteria model.ListUsersCriteria) (*model.Users, *errors.Error)
-	GetUserByID(ctx context.Context, ID string) (*model.User, *errors.Error)
+	GetUser(ctx context.Context, ID string) (*model.User, *errors.Error)
 	UpdateUser(ctx context.Context, user model.User) *errors.Error
-	DeleteUserByID(ctx context.Context, ID string) *errors.Error
+	AssignUserRole(ctx context.Context, role model.Role, ID string) *errors.Error
+	DeleteUser(ctx context.Context, ID string) *errors.Error
 }
 
 type Handler struct {
@@ -308,7 +309,7 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.service.GetUserByID(r.Context(), userID)
+	user, err := h.service.GetUser(r.Context(), userID)
 	if err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		switch {
@@ -386,6 +387,60 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *Handler) AssignUserRole(w http.ResponseWriter, r *http.Request) {
+	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
+
+	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
+	if !auth.IsAdmin() {
+		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.ResourceIsForbidden.String(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	req := new(model.AssignUserRoleRequest)
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+		slog.ErrorContext(r.Context(), errors.New(errors.JSONDecodeFailure).Wrap(err).Error(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.JSONDecodeFailure.String(),
+			"requestID": requestID,
+		})
+		return
+	}
+	defer r.Body.Close()
+
+	if err := req.Validate(); err != nil {
+		slog.ErrorContext(r.Context(), errors.New(errors.JSONValidationFailure).Wrap(err).Error(), slog.String("requestID", requestID))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": errors.JSONValidationFailure.String(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	if err := h.service.AssignUserRole(r.Context(), req.Role, r.PathValue("id")); err != nil {
+		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
+		switch {
+		case err.ContainsCodes(errors.UserNotFound):
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		json.NewEncoder(w).Encode(map[string]string{
+			"errorCode": err.Code(),
+			"requestID": requestID,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
@@ -401,7 +456,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeleteUserByID(r.Context(), userID); err != nil {
+	if err := h.service.DeleteUser(r.Context(), userID); err != nil {
 		slog.ErrorContext(r.Context(), err.Error(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{
