@@ -145,10 +145,10 @@ func (a *App) Start(ctx context.Context) error {
 	handler := a.use(
 		middleware.Authenticator,
 		middleware.RateLimiter,
-		middleware.JSONFormatter,
 		middleware.Recoverer,
-		middleware.Logger,
+		middleware.JSONFormatter,
 		middleware.AccessController,
+		middleware.Logger,
 	)
 
 	a.Server = &http.Server{
@@ -259,8 +259,9 @@ func (a *App) register(
 	a.mux.HandleFunc("GET /users", uhandler.ListUsers)
 	a.mux.HandleFunc("GET /users/{id}", uhandler.GetUser)
 	a.mux.HandleFunc("PUT /users/{id}", uhandler.UpdateUser)
-	a.mux.HandleFunc("GET /users/{id}/verify", uhandler.SendVerificationEmail)
-	a.mux.HandleFunc("POST /users/{id}/verify", uhandler.VerifyUser)
+	a.mux.HandleFunc("PATCH /users/{id}/role", uhandler.AssignUserRole)
+	a.mux.HandleFunc("GET /users/{id}/verification", uhandler.SendVerificationEmail)
+	a.mux.HandleFunc("PATCH /users/{id}/verification", uhandler.VerifyUser)
 	a.mux.HandleFunc("DELETE /users/{id}", uhandler.DeleteUser)
 	a.mux.HandleFunc("POST /material_types", mhandler.CreateMaterialType)
 	a.mux.HandleFunc("GET /material_types", mhandler.ListMaterialTypes)

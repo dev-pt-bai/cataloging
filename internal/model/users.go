@@ -33,35 +33,33 @@ const (
 	Administrator
 )
 
+var role = map[Role]string{
+	Requester:     "Requester",
+	Cataloger:     "Cataloger",
+	Approver:      "Approver",
+	Administrator: "Administrator",
+}
+
 func (r Role) MarshalJSON() ([]byte, error) {
-	var role string
-	switch r {
-	default:
-		role = "Unknown"
-	case Requester:
-		role = "Requester"
-	case Cataloger:
-		role = "Cataloger"
-	case Approver:
-		role = "Approver"
-	case Administrator:
-		role = "Administrator"
+	roleStr, exists := role[r]
+	if !exists {
+		return json.Marshal("Unknown")
 	}
 
-	return json.Marshal(role)
+	return json.Marshal(roleStr)
 }
 
 func RoleFromStr(s string) Role {
-	switch s {
+	switch strings.ToLower(s) {
 	default:
 		return 0
-	case "Requester":
+	case "requester":
 		return Requester
-	case "Cataloger":
+	case "cataloger":
 		return Cataloger
-	case "Approver":
+	case "approver":
 		return Approver
-	case "Administrator":
+	case "administrator":
 		return Administrator
 	}
 }
@@ -248,6 +246,32 @@ func (r *VerifyUserRequest) Validate() error {
 
 	if match, _ := regexp.MatchString("[^A-Z0-9]", r.Code); match {
 		messages = append(messages, "verification code contains illegal characters")
+	}
+
+	if len(messages) > 0 {
+		return errors.New(strings.Join(messages, ", "))
+	}
+
+	return nil
+}
+
+type AssignUserRoleRequest struct {
+	Role Role `json:"role"`
+}
+
+func (r *AssignUserRoleRequest) Validate() error {
+	if r == nil {
+		return fmt.Errorf("missing request object")
+	}
+
+	messages := make([]string, 0, 5)
+
+	if r.Role == 0 {
+		messages = append(messages, "role is required")
+	}
+
+	if _, exists := role[r.Role]; !exists {
+		messages = append(messages, "role is unknown")
 	}
 
 	if len(messages) > 0 {
