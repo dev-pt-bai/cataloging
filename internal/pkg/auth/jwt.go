@@ -56,35 +56,6 @@ func GenerateToken(user *model.User, tokenExpiry time.Duration, secret string) (
 	return &a, nil
 }
 
-func GenerateAccessToken(user *model.User, tokenExpiry time.Duration, secret string) (*model.Auth, *errors.Error) {
-	if user == nil {
-		return nil, errors.New(errors.UserNotFound)
-	}
-
-	accessExpiredAt := time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC).Unix()
-	if tokenExpiry > 0 {
-		accessExpiredAt = time.Now().Add(time.Hour * tokenExpiry).Unix()
-	}
-
-	accessToken, err := generateHS256JWT((model.Auth{
-		UserID:     user.ID,
-		UserEmail:  user.Email,
-		Role:       user.Role,
-		IsVerified: user.IsVerified,
-		ExpiredAt:  accessExpiredAt,
-	}).MapClaims(false), secret)
-	if err != nil {
-		return nil, errors.New(errors.GenerateJWTFailure).Wrap(err)
-	}
-
-	a := model.Auth{
-		AccessToken: accessToken,
-		ExpiredAt:   accessExpiredAt,
-	}
-
-	return &a, nil
-}
-
 func ParseToken(token string, secret string) (*model.Auth, *errors.Error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {

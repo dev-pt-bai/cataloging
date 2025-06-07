@@ -111,7 +111,7 @@ func NewHTMLEmail(subject, content, recipient string) *Email {
 
 func (e *Email) Validate() error {
 	if e == nil {
-		return fmt.Errorf("missing email object")
+		return errors.New("missing email object")
 	}
 
 	messages := make([]string, 0, 5)

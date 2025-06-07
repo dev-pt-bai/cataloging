@@ -294,7 +294,7 @@ type UpsertMaterialTypeRequest struct {
 
 func (r *UpsertMaterialTypeRequest) Validate() error {
 	if r == nil {
-		return fmt.Errorf("missing request object")
+		return errors.New("missing request object")
 	}
 
 	messages := make([]string, 0, 5)
@@ -337,7 +337,7 @@ type UpsertMaterialUoMRequest struct {
 
 func (r *UpsertMaterialUoMRequest) Validate() error {
 	if r == nil {
-		return fmt.Errorf("missing request object")
+		return errors.New("missing request object")
 	}
 
 	messages := make([]string, 0, 5)
@@ -379,7 +379,7 @@ type UpsertMaterialGroupRequest struct {
 
 func (r *UpsertMaterialGroupRequest) Validate() error {
 	if r == nil {
-		return fmt.Errorf("missing request object")
+		return errors.New("missing request object")
 	}
 
 	messages := make([]string, 0, 5)
@@ -421,7 +421,7 @@ type UpsertPlantRequest struct {
 
 func (r *UpsertPlantRequest) Validate() error {
 	if r == nil {
-		return fmt.Errorf("missing request object")
+		return errors.New("missing request object")
 	}
 
 	messages := make([]string, 0, 5)
@@ -463,7 +463,7 @@ type UpsertManufacturerRequest struct {
 
 func (r *UpsertManufacturerRequest) Validate() error {
 	if r == nil {
-		return fmt.Errorf("missing request object")
+		return errors.New("missing request object")
 	}
 
 	messages := make([]string, 0, 5)

@@ -118,7 +118,7 @@ func (s *Service) VerifyUser(ctx context.Context, userID string, code string) (*
 		return nil, err
 	}
 
-	auth, err := auth.GenerateAccessToken(user, s.tokenExpiry, s.secretJWT)
+	auth, err := auth.GenerateToken(user, s.tokenExpiry, s.secretJWT)
 	if err != nil {
 		return nil, err
 	}

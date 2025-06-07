@@ -120,10 +120,13 @@ curl --location 'localhost:8002/settings/msgraph/auth?code=string&error=string&e
 }
 ```
 
-### POST /login
+### POST /auth/token
 
-Logs user into the system. The returned access token can be used for authorization purpose when calling most of the endpoints, while
-the refresh token can be used to generate new access token if the old one expires.
+This endpoint provides two purposes:
+1. Logs user into the system. The returned access token can be used for authorization purpose when calling most of the endpoints, while
+the refresh token can be used to generate new access token if the old one expires. It is specified by setting grantType field in the
+request to "password", thus the password field cannot be empty.
+2. Generate new access token (and a new refresh token) using a refresh token. Refresh tokens can still be expired although their lifetime is typically much longer than that of access tokens. Once a refresh token expired, users must perform new login. It is specified by setting grantType field in the request to "refreshToken", thus the refreshToken field cannot be empty.
 
 #### Example request
 
@@ -131,8 +134,10 @@ the refresh token can be used to generate new access token if the old one expire
 curl --location '[host]:[port]/login' \
 --header 'Content-Type: application/json' \
 --data '{
+    "grant_type": "string,required",
     "id": "string,required",
-    "password": "string,required"
+    "password": "string",
+    "refreshToken": "string"
 }'
 ```
 
@@ -144,41 +149,6 @@ curl --location '[host]:[port]/login' \
 {
     "accessToken": "string",
     "refreshToken": "string",
-    "expiredAt": 0
-}
-```
-
-- 400, 401, 404, 500
-
-```json
-{
-    "errorCode": "string",
-    "requestID": "string"
-}
-```
-
-### POST /refresh
-
-Generate new access token using a refresh token. Refresh tokens can still be expired although their lifetime is typically much longer than that of access tokens. Once a refresh token expired, users must perform new login.
-
-#### Example request
-
-```bash
-curl --location '[host]:[port]/refresh' \
---header 'Authorization: Bearer [token]' \
---header 'Content-Type: application/json' \
---data '{
-    "id": "string,required"
-}'
-```
-
-#### Example response
-
-- 200
-
-```json
-{
-    "accessToken": "string",
     "expiredAt": 0
 }
 ```
