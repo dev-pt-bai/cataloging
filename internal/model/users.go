@@ -144,7 +144,7 @@ type UpsertUserRequest struct {
 
 func (r *UpsertUserRequest) Validate() error {
 	if r == nil {
-		return fmt.Errorf("missing request object")
+		return errors.New("missing request object")
 	}
 
 	messages := make([]string, 0, 5)
@@ -227,7 +227,7 @@ type VerifyUserRequest struct {
 
 func (r *VerifyUserRequest) Validate() error {
 	if r == nil {
-		return fmt.Errorf("missing request object")
+		return errors.New("missing request object")
 	}
 
 	messages := make([]string, 0, 5)
@@ -261,7 +261,7 @@ type AssignUserRoleRequest struct {
 
 func (r *AssignUserRoleRequest) Validate() error {
 	if r == nil {
-		return fmt.Errorf("missing request object")
+		return errors.New("missing request object")
 	}
 
 	messages := make([]string, 0, 5)

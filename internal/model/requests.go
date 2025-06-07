@@ -73,7 +73,7 @@ type UpsertRequestRequest struct {
 
 func (r *UpsertRequestRequest) Validate() error {
 	if r == nil {
-		return fmt.Errorf("missing request object")
+		return errors.New("missing request object")
 	}
 
 	messages := make([]string, 0, 5)

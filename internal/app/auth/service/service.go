@@ -63,7 +63,7 @@ func (s *Service) RefreshToken(ctx context.Context, userID string) (*model.Auth,
 		return nil, err
 	}
 
-	newAuth, err := auth.GenerateAccessToken(u, s.tokenExpiry, s.secretJWT)
+	newAuth, err := auth.GenerateToken(u, s.tokenExpiry, s.secretJWT)
 	if err != nil {
 		return nil, err
 	}

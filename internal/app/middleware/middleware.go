@@ -51,8 +51,7 @@ func JSONFormatter(next http.Handler, _ *configs.Config) http.Handler {
 var whitelistAuth map[string]struct{} = map[string]struct{}{
 	"GET /ping":                  {},
 	"POST /users":                {},
-	"POST /login":                {},
-	"POST /refresh":              {},
+	"POST /auth/token":           {},
 	"GET /settings/msgraph/auth": {},
 }
 
@@ -140,7 +139,7 @@ func Authenticator(next http.Handler, config *configs.Config) http.Handler {
 func AccessController(next http.Handler, _ *configs.Config) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 		if r.Method == http.MethodOptions {

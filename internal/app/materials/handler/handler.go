@@ -590,7 +590,7 @@ func (h *Handler) buildListManufacturersCriteria(q url.Values) (model.ListManufa
 func (h *Handler) sort(q url.Values, sortCriteria *model.Sort, messages *[]string, isAvailable func(string) bool) {
 	if fieldName := q.Get("sortBy"); len(fieldName) != 0 {
 		if !isAvailable(fieldName) {
-			*messages = append(*messages, fmt.Sprintf("fieldName [%s] is not available", fieldName))
+			*messages = append(*messages, fmt.Sprintf("fieldName is not available: %s", fieldName))
 		} else {
 			sortCriteria.FieldName = fieldName
 		}
@@ -612,7 +612,7 @@ func (h *Handler) paginate(q url.Values, page *model.Page, messages *[]string) {
 		if err != nil {
 			*messages = append(*messages, fmt.Sprintf("limit: %s", err.Error()))
 		} else if limit < 1 || limit > 20 {
-			*messages = append(*messages, fmt.Sprintf("limit [%d] is out of range", limit))
+			*messages = append(*messages, fmt.Sprintf("limit is out of range: %d", limit))
 		} else {
 			page.ItemPerPage = limit
 		}
@@ -625,7 +625,7 @@ func (h *Handler) paginate(q url.Values, page *model.Page, messages *[]string) {
 		if err != nil {
 			*messages = append(*messages, fmt.Sprintf("page: %s", err.Error()))
 		} else if pageInt < 1 {
-			*messages = append(*messages, fmt.Sprintf("page [%d] is out of range", pageInt))
+			*messages = append(*messages, fmt.Sprintf("page is out of range: %d", pageInt))
 		} else {
 			page.Number = pageInt
 		}

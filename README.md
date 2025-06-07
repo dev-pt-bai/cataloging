@@ -82,7 +82,7 @@ Once the server is running, you can make requests to the API.
 
 ### Example API Requests
 
-- **POST** `/login` - Login
+- **POST** `/auth/token` - Login or refresh token
 - **POST** `/users` - Register a new user
 - **GET** `/users/{id}` - Fetch a user by ID
 - **PUT** `/users/{id}` - Update a user by ID
