@@ -1,11 +1,12 @@
 module github.com/dev-pt-bai/cataloging
 
-go 1.24
+go 1.24.0
 
 require (
 	github.com/go-sql-driver/mysql v1.9.2
+	github.com/golang/mock v1.6.0
 	github.com/redis/go-redis/v9 v9.8.0
-	golang.org/x/crypto v0.38.0
+	golang.org/x/crypto v0.45.0
 	golang.org/x/sync v0.14.0
 	golang.org/x/time v0.11.0
 )

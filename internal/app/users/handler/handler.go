@@ -15,6 +15,8 @@ import (
 	"github.com/dev-pt-bai/cataloging/internal/pkg/errors"
 )
 
+//go:generate mockgen -source=./handler.go -destination=./mock.go -package=handler
+
 type Service interface {
 	CreateUser(ctx context.Context, user model.User) *errors.Error
 	SendVerificationEmail(ctx context.Context, userID string) *errors.Error
