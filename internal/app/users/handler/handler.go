@@ -84,7 +84,7 @@ func (h *Handler) SendVerificationEmail(w http.ResponseWriter, r *http.Request) 
 
 	userID := r.PathValue("id")
 	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
-	if auth.UserID != userID && !auth.IsAdmin() {
+	if auth == nil || auth.UserID != userID {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
