@@ -30,40 +30,41 @@ func TestCreateUser(t *testing.T) {
 	}
 	requestBytes, _ := json.Marshal(request)
 
+	type response struct {
+		ErrorCode string `json:"errorCode"`
+		RequestID string `json:"requestID"`
+	}
+
+	type result struct {
+		code     int
+		response *response
+	}
+
 	tests := []struct {
 		name     string
 		callFunc func()
 		input    []byte
-		want     struct {
-			code     int
-			response map[string]string
-		}
+		want     result
 	}{
 		{
 			name:  "invalid input type",
-			input: []byte("this is non-JSON input"),
-			want: struct {
-				code     int
-				response map[string]string
-			}{
+			input: []byte("this is a non-JSON input"),
+			want: result{
 				code: http.StatusBadRequest,
-				response: map[string]string{
-					"errorCode": errors.JSONDecodeFailure.String(),
-					"requestID": requestID,
+				response: &response{
+					ErrorCode: errors.JSONDecodeFailure.String(),
+					RequestID: requestID,
 				},
 			},
 		},
 		{
 			name:  "invalid input content",
 			input: []byte("{}"),
-			want: struct {
-				code     int
-				response map[string]string
-			}{
+			want: result{
 				code: http.StatusBadRequest,
-				response: map[string]string{
-					"errorCode": errors.JSONValidationFailure.String(),
-					"requestID": requestID,
+				response: &response{
+					ErrorCode: errors.JSONValidationFailure.String(),
+					RequestID: requestID,
 				},
 			},
 		},
@@ -73,14 +74,11 @@ func TestCreateUser(t *testing.T) {
 				service.EXPECT().CreateUser(ctx, request.Model()).Return(errors.New(errors.UserAlreadyExists))
 			},
 			input: requestBytes,
-			want: struct {
-				code     int
-				response map[string]string
-			}{
+			want: result{
 				code: http.StatusConflict,
-				response: map[string]string{
-					"errorCode": errors.UserAlreadyExists.String(),
-					"requestID": requestID,
+				response: &response{
+					ErrorCode: errors.UserAlreadyExists.String(),
+					RequestID: requestID,
 				},
 			},
 		},
@@ -90,14 +88,11 @@ func TestCreateUser(t *testing.T) {
 				service.EXPECT().CreateUser(ctx, request.Model()).Return(errors.New(errors.GeneratePasswordFailure))
 			},
 			input: requestBytes,
-			want: struct {
-				code     int
-				response map[string]string
-			}{
+			want: result{
 				code: http.StatusInternalServerError,
-				response: map[string]string{
-					"errorCode": errors.GeneratePasswordFailure.String(),
-					"requestID": requestID,
+				response: &response{
+					ErrorCode: errors.GeneratePasswordFailure.String(),
+					RequestID: requestID,
 				},
 			},
 		},
@@ -107,10 +102,7 @@ func TestCreateUser(t *testing.T) {
 				service.EXPECT().CreateUser(ctx, request.Model()).Return(nil)
 			},
 			input: requestBytes,
-			want: struct {
-				code     int
-				response map[string]string
-			}{
+			want: result{
 				code: http.StatusCreated,
 			},
 		},
@@ -128,8 +120,8 @@ func TestCreateUser(t *testing.T) {
 		result := w.Result()
 		defer result.Body.Close()
 
-		response := make(map[string]string)
-		json.NewDecoder(result.Body).Decode(&response)
+		response := new(response)
+		json.NewDecoder(result.Body).Decode(response)
 
 		if test.want.code != result.StatusCode {
 			t.Errorf("want: %v, got: %v", test.want.code, result.StatusCode)
@@ -154,26 +146,30 @@ func TestSendVerificationEmail(t *testing.T) {
 	}
 	ctx = context.WithValue(ctx, middleware.AuthKey, auth)
 
+	type response struct {
+		ErrorCode string `json:"errorCode"`
+		RequestID string `json:"requestID"`
+	}
+
+	type result struct {
+		code     int
+		response *response
+	}
+
 	tests := []struct {
 		name      string
 		pathValue string
 		callFunc  func()
-		want      struct {
-			code     int
-			response map[string]string
-		}
+		want      result
 	}{
 		{
 			name:      "invalid UserID",
-			pathValue: "this is invalid UserID",
-			want: struct {
-				code     int
-				response map[string]string
-			}{
+			pathValue: "this is an invalid UserID",
+			want: result{
 				code: http.StatusForbidden,
-				response: map[string]string{
-					"errorCode": errors.ResourceIsForbidden.String(),
-					"requestID": requestID,
+				response: &response{
+					ErrorCode: errors.ResourceIsForbidden.String(),
+					RequestID: requestID,
 				},
 			},
 		},
@@ -183,14 +179,11 @@ func TestSendVerificationEmail(t *testing.T) {
 			callFunc: func() {
 				service.EXPECT().SendVerificationEmail(ctx, auth.UserID).Return(errors.New(errors.UserNotFound))
 			},
-			want: struct {
-				code     int
-				response map[string]string
-			}{
+			want: result{
 				code: http.StatusNotFound,
-				response: map[string]string{
-					"errorCode": errors.UserNotFound.String(),
-					"requestID": requestID,
+				response: &response{
+					ErrorCode: errors.UserNotFound.String(),
+					RequestID: requestID,
 				},
 			},
 		},
@@ -200,14 +193,11 @@ func TestSendVerificationEmail(t *testing.T) {
 			callFunc: func() {
 				service.EXPECT().SendVerificationEmail(ctx, auth.UserID).Return(errors.New(errors.UserAlreadyVerified))
 			},
-			want: struct {
-				code     int
-				response map[string]string
-			}{
+			want: result{
 				code: http.StatusConflict,
-				response: map[string]string{
-					"errorCode": errors.UserAlreadyVerified.String(),
-					"requestID": requestID,
+				response: &response{
+					ErrorCode: errors.UserAlreadyVerified.String(),
+					RequestID: requestID,
 				},
 			},
 		},
@@ -217,14 +207,11 @@ func TestSendVerificationEmail(t *testing.T) {
 			callFunc: func() {
 				service.EXPECT().SendVerificationEmail(ctx, auth.UserID).Return(errors.New(errors.UserOTPAlreadyExists))
 			},
-			want: struct {
-				code     int
-				response map[string]string
-			}{
+			want: result{
 				code: http.StatusConflict,
-				response: map[string]string{
-					"errorCode": errors.UserOTPAlreadyExists.String(),
-					"requestID": requestID,
+				response: &response{
+					ErrorCode: errors.UserOTPAlreadyExists.String(),
+					RequestID: requestID,
 				},
 			},
 		},
@@ -234,14 +221,11 @@ func TestSendVerificationEmail(t *testing.T) {
 			callFunc: func() {
 				service.EXPECT().SendVerificationEmail(ctx, auth.UserID).Return(errors.New(errors.SendEmailFailure))
 			},
-			want: struct {
-				code     int
-				response map[string]string
-			}{
+			want: result{
 				code: http.StatusBadGateway,
-				response: map[string]string{
-					"errorCode": errors.SendEmailFailure.String(),
-					"requestID": requestID,
+				response: &response{
+					ErrorCode: errors.SendEmailFailure.String(),
+					RequestID: requestID,
 				},
 			},
 		},
@@ -251,14 +235,11 @@ func TestSendVerificationEmail(t *testing.T) {
 			callFunc: func() {
 				service.EXPECT().SendVerificationEmail(ctx, auth.UserID).Return(errors.New(errors.RunQueryFailure))
 			},
-			want: struct {
-				code     int
-				response map[string]string
-			}{
+			want: result{
 				code: http.StatusInternalServerError,
-				response: map[string]string{
-					"errorCode": errors.RunQueryFailure.String(),
-					"requestID": requestID,
+				response: &response{
+					ErrorCode: errors.RunQueryFailure.String(),
+					RequestID: requestID,
 				},
 			},
 		},
@@ -268,10 +249,7 @@ func TestSendVerificationEmail(t *testing.T) {
 			callFunc: func() {
 				service.EXPECT().SendVerificationEmail(ctx, auth.UserID).Return(nil)
 			},
-			want: struct {
-				code     int
-				response map[string]string
-			}{
+			want: result{
 				code: http.StatusAccepted,
 			},
 		},
@@ -290,7 +268,7 @@ func TestSendVerificationEmail(t *testing.T) {
 		result := w.Result()
 		defer result.Body.Close()
 
-		response := make(map[string]string)
+		response := new(response)
 		json.NewDecoder(result.Body).Decode(&response)
 
 		if test.want.code != result.StatusCode {
@@ -299,6 +277,184 @@ func TestSendVerificationEmail(t *testing.T) {
 
 		if test.want.response != nil && !reflect.DeepEqual(test.want.response, response) {
 			t.Errorf("want: %v, got: %v", test.want.response, response)
+		}
+	}
+}
+
+func TestVerifyUser(t *testing.T) {
+	service := NewMockService(gomock.NewController(t))
+	handler := New(service)
+
+	requestID := "dummy-request-id"
+	ctx := context.WithValue(context.Background(), middleware.RequestIDKey, requestID)
+
+	auth := &model.Auth{
+		UserID: "1",
+		Role:   model.Requester,
+	}
+	ctx = context.WithValue(ctx, middleware.AuthKey, auth)
+
+	request := model.VerifyUserRequest{
+		Code: "MYCODE",
+	}
+	requestBytes, _ := json.Marshal(request)
+
+	newAuth := model.Auth{
+		AccessToken: "dummy-access-token",
+		ExpiredAt:   10000000,
+	}
+
+	type response struct {
+		ErrorCode string `json:"errorCode"`
+		RequestID string `json:"requestID"`
+		model.Auth
+	}
+
+	type result struct {
+		code     int
+		Response *response
+	}
+
+	tests := []struct {
+		name      string
+		pathValue string
+		callFunc  func()
+		input     []byte
+		want      result
+	}{
+		{
+			name:      "invalid UserID",
+			pathValue: "this is an invalid UserID",
+			want: result{
+				code: http.StatusForbidden,
+				Response: &response{
+					ErrorCode: errors.ResourceIsForbidden.String(),
+					RequestID: requestID,
+				},
+			},
+		},
+		{
+			name:      "invalid input type",
+			pathValue: auth.UserID,
+			input:     []byte("this is a non-JSON input"),
+			want: result{
+				code: http.StatusBadRequest,
+				Response: &response{
+					ErrorCode: errors.JSONDecodeFailure.String(),
+					RequestID: requestID,
+				},
+			},
+		},
+		{
+			name:      "invalid input content",
+			pathValue: auth.UserID,
+			input:     []byte("{}"),
+			want: result{
+				code: http.StatusBadRequest,
+				Response: &response{
+					ErrorCode: errors.JSONValidationFailure.String(),
+					RequestID: requestID,
+				},
+			},
+		},
+		{
+			name:      "service.VerifyUser returns UserOTPNotFound",
+			pathValue: auth.UserID,
+			callFunc: func() {
+				service.EXPECT().VerifyUser(ctx, auth.UserID, request.Code).Return(nil, errors.New(errors.UserOTPNotFound))
+			},
+			input: requestBytes,
+			want: result{
+				code: http.StatusNotFound,
+				Response: &response{
+					ErrorCode: errors.UserOTPNotFound.String(),
+					RequestID: requestID,
+				},
+			},
+		},
+		{
+			name:      "service.VerifyUser returns UserNotFound",
+			pathValue: auth.UserID,
+			callFunc: func() {
+				service.EXPECT().VerifyUser(ctx, auth.UserID, request.Code).Return(nil, errors.New(errors.UserNotFound))
+			},
+			input: requestBytes,
+			want: result{
+				code: http.StatusNotFound,
+				Response: &response{
+					ErrorCode: errors.UserNotFound.String(),
+					RequestID: requestID,
+				},
+			},
+		},
+		{
+			name:      "service.VerifyUser returns ExpiredOTP",
+			pathValue: auth.UserID,
+			callFunc: func() {
+				service.EXPECT().VerifyUser(ctx, auth.UserID, request.Code).Return(nil, errors.New(errors.ExpiredOTP))
+			},
+			input: requestBytes,
+			want: result{
+				code: http.StatusForbidden,
+				Response: &response{
+					ErrorCode: errors.ExpiredOTP.String(),
+					RequestID: requestID,
+				},
+			},
+		},
+		{
+			name:      "service.VerifyUser returns RunQueryFailure",
+			pathValue: auth.UserID,
+			callFunc: func() {
+				service.EXPECT().VerifyUser(ctx, auth.UserID, request.Code).Return(nil, errors.New(errors.RunQueryFailure))
+			},
+			input: requestBytes,
+			want: result{
+				code: http.StatusInternalServerError,
+				Response: &response{
+					ErrorCode: errors.RunQueryFailure.String(),
+					RequestID: requestID,
+				},
+			},
+		},
+		{
+			name:      "success",
+			pathValue: auth.UserID,
+			callFunc: func() {
+				service.EXPECT().VerifyUser(ctx, auth.UserID, request.Code).Return(&newAuth, nil)
+			},
+			input: requestBytes,
+			want: result{
+				code: http.StatusOK,
+				Response: &response{
+					Auth: newAuth,
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		if test.callFunc != nil {
+			test.callFunc()
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequestWithContext(ctx, http.MethodPatch, "/users/{id}/verification", bytes.NewBuffer(test.input))
+		r.SetPathValue("id", test.pathValue)
+		handler.VerifyUser(w, r)
+
+		result := w.Result()
+		defer result.Body.Close()
+
+		response := new(response)
+		json.NewDecoder(result.Body).Decode(response)
+
+		if test.want.code != result.StatusCode {
+			t.Errorf("want: %v, got: %v", test.want.code, result.StatusCode)
+		}
+
+		if test.want.Response != nil && !reflect.DeepEqual(test.want.Response, response) {
+			t.Errorf("want: %v, got: %v", test.want.Response, response)
 		}
 	}
 }

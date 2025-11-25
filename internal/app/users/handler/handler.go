@@ -120,7 +120,8 @@ func (h *Handler) VerifyUser(w http.ResponseWriter, r *http.Request) {
 	requestID, _ := r.Context().Value(middleware.RequestIDKey).(string)
 
 	userID := r.PathValue("id")
-	if auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth); auth.UserID != userID && !auth.IsAdmin() {
+	auth, _ := r.Context().Value(middleware.AuthKey).(*model.Auth)
+	if auth == nil || auth.UserID != userID {
 		slog.ErrorContext(r.Context(), errors.ResourceIsForbidden.String(), slog.String("requestID", requestID))
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
