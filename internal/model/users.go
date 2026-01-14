@@ -124,14 +124,14 @@ func (u *Users) Scan(src any) error {
 	return json.Unmarshal(b, u)
 }
 
-func (u *Users) Response(page Page) map[string]any {
+func (u *Users) Response(page Page) List {
 	if u == nil {
-		return nil
+		return List{}
 	}
 
-	return map[string]any{
-		"data": u.Data,
-		"meta": listMeta(u.Count, page.ItemPerPage, page.Number),
+	return List{
+		Data: u.Data,
+		Meta: meta(u.Count, page.ItemPerPage, page.Number),
 	}
 }
 
