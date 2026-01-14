@@ -246,28 +246,32 @@ func (f *Flag) UnmarshalJSON(src []byte) error {
 }
 
 type List struct {
-	Data []any `json:"data"`
-	Meta Meta  `json:"meta"`
+	Data any  `json:"data"`
+	Meta Meta `json:"meta"`
 }
 
 type Meta struct {
-	Page int64 `json:"page"`
+	TotalRecords int64  `json:"totalRecords"`
+	TotalPages   int64  `json:"totalPages"`
+	CurrentPage  int64  `json:"currentPage"`
+	PreviousPage *int64 `json:"previousPage"`
+	NextPage     *int64 `json:"nextPage"`
 }
 
-func listMeta(count int64, itemPerPage int64, pageNumber int64) map[string]any {
+func meta(count int64, itemPerPage int64, pageNumber int64) Meta {
 	totalPages := int64(math.Ceil(float64(count) / float64(itemPerPage)))
-	return map[string]any{
-		"totalRecords": count,
-		"totalPages":   totalPages,
-		"currentPage":  pageNumber,
-		"previousPage": func(currentPage, totalPages int64) *int64 {
+	return Meta{
+		TotalRecords: count,
+		TotalPages:   totalPages,
+		CurrentPage:  pageNumber,
+		PreviousPage: func(currentPage, totalPages int64) *int64 {
 			if currentPage == 1 || currentPage > totalPages+1 {
 				return nil
 			}
 			currentPage--
 			return &currentPage
 		}(pageNumber, totalPages),
-		"nextPage": func(currentPage, totalPages int64) *int64 {
+		NextPage: func(currentPage, totalPages int64) *int64 {
 			if currentPage >= totalPages {
 				return nil
 			}

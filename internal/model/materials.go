@@ -58,7 +58,7 @@ func (p *Plants) Response(page Page) map[string]any {
 
 	return map[string]any{
 		"data": p.Data,
-		"meta": listMeta(p.Count, page.ItemPerPage, page.Number),
+		"meta": meta(p.Count, page.ItemPerPage, page.Number),
 	}
 }
 
@@ -95,7 +95,7 @@ func (mts *MaterialTypes) Response(page Page) map[string]any {
 
 	return map[string]any{
 		"data": mts.Data,
-		"meta": listMeta(mts.Count, page.ItemPerPage, page.Number),
+		"meta": meta(mts.Count, page.ItemPerPage, page.Number),
 	}
 }
 
@@ -131,7 +131,7 @@ func (uoms *MaterialUoMs) Response(page Page) map[string]any {
 
 	return map[string]any{
 		"data": uoms.Data,
-		"meta": listMeta(uoms.Count, page.ItemPerPage, page.Number),
+		"meta": meta(uoms.Count, page.ItemPerPage, page.Number),
 	}
 }
 
@@ -167,7 +167,7 @@ func (mgs *MaterialGroups) Response(page Page) map[string]any {
 
 	return map[string]any{
 		"data": mgs.Data,
-		"meta": listMeta(mgs.Count, page.ItemPerPage, page.Number),
+		"meta": meta(mgs.Count, page.ItemPerPage, page.Number),
 	}
 }
 
@@ -210,7 +210,7 @@ func (m *Manufacturers) Response(page Page) map[string]any {
 
 	return map[string]any{
 		"data": m.Data,
-		"meta": listMeta(m.Count, page.ItemPerPage, page.Number),
+		"meta": meta(m.Count, page.ItemPerPage, page.Number),
 	}
 }
 
